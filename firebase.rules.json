@@ -1,0 +1,20 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "matches": {
+      "$matchId": {
+        ".read": true,
+        ".write": "auth != null && (data.child('ownerUid').val() === auth.uid || !data.exists())",
+        "chat": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    }
+  }
+}

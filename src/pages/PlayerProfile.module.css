@@ -1,0 +1,66 @@
+.page { max-width: 680px; margin: 0 auto; padding-bottom: 3rem; }
+.loading { text-align: center; padding: 4rem; color: #aaa; }
+.spinner { font-size: 40px; margin-bottom: 10px; }
+
+.hero { background: linear-gradient(135deg, #1a5c40, #1D9E75); padding: 1.5rem 1.25rem; position: relative; }
+.back { position: absolute; top: 1rem; left: 1rem; background: rgba(255,255,255,0.2); border: none; color: #fff; font-size: 18px; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.heroInner { display: flex; align-items: flex-start; gap: 1rem; margin-top: 0.5rem; }
+.avatar { width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.2); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; flex-shrink: 0; border: 3px solid rgba(255,255,255,0.4); }
+.heroInfo { flex: 1; color: #fff; }
+.name { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+.heroMeta { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.rankBadge { background: rgba(255,255,255,0.25); padding: 3px 10px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+.club { font-size: 13px; opacity: 0.85; }
+.nat { font-size: 12px; opacity: 0.7; }
+.heroStats { display: flex; gap: 1.5rem; }
+.heroStat { display: flex; flex-direction: column; }
+.heroStatVal { font-size: 20px; font-weight: 700; }
+.heroStatLbl { font-size: 11px; opacity: 0.75; margin-top: 1px; }
+
+.tabs { display: flex; border-bottom: 1px solid #eee; background: #fff; sticky: top; }
+.tab { flex: 1; padding: 12px 8px; border: none; background: none; font-size: 13px; color: #888; cursor: pointer; font-family: inherit; border-bottom: 2px solid transparent; transition: all 0.15s; }
+.tabActive { color: #1D9E75; border-bottom-color: #1D9E75; font-weight: 600; }
+
+.content { padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
+.card { background: #fff; border: 1px solid #eee; border-radius: 14px; padding: 1.25rem; }
+.cardTitle { font-size: 15px; font-weight: 600; color: #111; margin-bottom: 1rem; }
+
+.yearGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.yearCard { background: #f9f9f9; border-radius: 10px; padding: 12px; }
+.yearNum { font-size: 13px; color: #aaa; margin-bottom: 4px; }
+.yearVic { font-size: 22px; font-weight: 700; color: #111; }
+.breakthrough { font-size: 11px; color: #1D9E75; font-weight: 600; margin-top: 2px; }
+.yearBest { font-size: 12px; color: #888; margin-top: 4px; }
+
+.tournamentRow { padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+.tournamentRow:last-child { border-bottom: none; }
+.tournamentName { font-size: 14px; font-weight: 500; color: #111; }
+.tournamentMeta { font-size: 12px; color: #aaa; margin-top: 2px; }
+
+.statsGrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.statBox { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 1rem; text-align: center; }
+.statBoxVal { font-size: 22px; font-weight: 700; color: #1D9E75; }
+.statBoxLbl { font-size: 12px; color: #aaa; margin-top: 3px; }
+
+.matchRow { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+.matchRow:last-child { border-bottom: none; }
+.matchResult { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+.win { background: #E1F5EE; color: #0F6E56; }
+.loss { background: #FCEBEB; color: #A32D2D; }
+.matchInfo { flex: 1; }
+.matchOpp { font-size: 14px; font-weight: 500; color: #111; display: flex; align-items: center; gap: 6px; }
+.matchOppRank { font-size: 11px; background: #E1F5EE; color: #0F6E56; padding: 1px 6px; border-radius: 4px; }
+.matchMeta { font-size: 12px; color: #aaa; margin-top: 2px; }
+.matchScore { font-size: 12px; color: #666; margin-top: 2px; font-family: monospace; }
+.matchType { font-size: 16px; }
+
+.rankRow { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+.rankRow:last-child { border-bottom: none; }
+.rankPeriod { font-size: 13px; color: #555; }
+.rankVal { font-size: 14px; font-weight: 700; color: #1D9E75; background: #E1F5EE; padding: 3px 10px; border-radius: 6px; }
+
+.statsList { display: flex; flex-direction: column; gap: 0; }
+.statsRow { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
+.statsRow:last-child { border-bottom: none; }
+.statsRow span:first-child { color: #555; }
+.statsRow span:last-child { font-weight: 500; color: #111; }

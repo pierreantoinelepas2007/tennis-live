@@ -1,0 +1,104 @@
+.hero {
+  min-height: calc(100vh - 60px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(160deg, #f0fdf8 0%, #e8f5f0 60%, #fff 100%);
+}
+.heroContent {
+  text-align: center;
+  max-width: 480px;
+}
+.heroIcon { font-size: 56px; margin-bottom: 0.5rem; }
+.heroTitle {
+  font-size: 44px;
+  font-weight: 800;
+  color: #1D9E75;
+  letter-spacing: -2px;
+  margin-bottom: 0.75rem;
+}
+.heroSub {
+  font-size: 16px;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+.heroBtn {
+  padding: 14px 32px;
+  background: #1D9E75;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  margin-bottom: 2.5rem;
+  letter-spacing: -0.2px;
+}
+.heroBtn:hover { background: #0F6E56; transform: translateY(-1px); }
+.features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  text-align: left;
+}
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #555;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  border: 1px solid #eee;
+}
+
+/* Logged in */
+.page {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+.welcome { margin-bottom: 1.5rem; }
+.welcome h1 { font-size: 24px; font-weight: 700; color: #111; }
+.welcomeSub { font-size: 15px; color: #888; margin-top: 2px; }
+.bigBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 1.25rem 1.5rem;
+  background: #1D9E75;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+  margin-bottom: 1rem;
+}
+.bigBtn:hover { background: #0F6E56; }
+.bigBtnIcon { font-size: 28px; }
+.bigBtn strong { display: block; font-size: 17px; font-weight: 700; text-align: left; }
+.bigBtnSub { font-size: 13px; opacity: 0.8; display: block; text-align: left; margin-top: 2px; }
+.quickLinks {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.quickCard {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.quickCard:hover { border-color: #1D9E75; background: #f5fdf9; }
+.quickIcon { font-size: 28px; margin-bottom: 6px; }
+.quickLabel { font-size: 13px; font-weight: 500; color: #444; }

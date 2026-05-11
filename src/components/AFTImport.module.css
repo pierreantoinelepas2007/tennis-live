@@ -1,0 +1,25 @@
+.container { background: #fff; border: 1px solid #eee; border-radius: 14px; padding: 1.25rem; }
+.title { font-size: 14px; font-weight: 600; color: #222; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.badge { background: #E1F5EE; color: #0F6E56; font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 5px; letter-spacing: 0.05em; }
+.row { display: flex; gap: 8px; margin-bottom: 8px; }
+.input { flex: 1; padding: 9px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.15s; }
+.input:focus { border-color: #1D9E75; }
+.btn { padding: 9px 18px; background: #1D9E75; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background 0.15s; min-width: 90px; }
+.btn:hover:not(:disabled) { background: #0F6E56; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.error { font-size: 13px; color: #c0392b; background: #fdf3f2; border: 1px solid #f5c6c2; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; }
+.results { border: 1px solid #eee; border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+.resultRow { padding: 10px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f5f5f5; transition: background 0.12s; }
+.resultRow:last-child { border-bottom: none; }
+.resultRow:hover { background: #f5fdf9; }
+.resultName { font-size: 14px; font-weight: 500; color: #111; }
+.resultMeta { display: flex; align-items: center; gap: 10px; }
+.ranking { background: #E1F5EE; color: #0F6E56; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 5px; }
+.record { font-size: 12px; color: #aaa; }
+.result { background: #f5fdf9; border: 1px solid #d0ede2; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; }
+.resultRow2 { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 4px; }
+.check { color: #1D9E75; font-weight: 700; font-size: 16px; }
+.resultNote { font-size: 13px; color: #555; margin-top: 2px; }
+.sourceLink { font-size: 11px; color: #aaa; }
+.note { font-size: 11px; color: #aaa; margin-top: 4px; }
+.sourceNote { font-size: 11px; color: #aaa; margin-top: 3px; }

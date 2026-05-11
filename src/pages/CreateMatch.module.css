@@ -1,0 +1,39 @@
+.page { max-width: 520px; margin: 1.5rem auto; padding: 0 1rem 3rem; }
+.card { background: #fff; border-radius: 16px; padding: 2rem; border: 1px solid #eee; }
+.title { font-size: 22px; font-weight: 700; color: #111; margin-bottom: 1.5rem; letter-spacing: -0.5px; }
+.field { margin-bottom: 1rem; flex: 1; }
+.row { display: flex; gap: 12px; }
+.label { display: block; font-size: 13px; font-weight: 500; color: #555; margin-bottom: 6px; }
+.input, .select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 9px; font-size: 15px; font-family: inherit; color: #222; background: #fff; outline: none; transition: border-color 0.15s; box-sizing: border-box; }
+.input:focus, .select:focus { border-color: #1D9E75; }
+
+.typeGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.typeBtn { display: flex; flex-direction: column; align-items: center; padding: 12px 8px; border: 1.5px solid #eee; border-radius: 10px; background: #fff; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.typeBtn:hover { border-color: #1D9E75; background: #f5fdf9; }
+.typeBtnActive { border-color: #1D9E75; background: #E1F5EE; }
+.typeIcon { font-size: 22px; margin-bottom: 4px; }
+.typeName { font-size: 13px; font-weight: 600; color: #111; }
+.typeDesc { font-size: 11px; color: #aaa; margin-top: 1px; }
+
+.playerARow { background: #f5fdf9; border: 1px solid #d0ede2; border-radius: 9px; padding: 10px 14px; }
+.playerAInfo { display: flex; align-items: center; gap: 10px; }
+.playerAName { font-size: 15px; font-weight: 500; color: #111; flex: 1; }
+.playerARank { background: #E1F5EE; color: #0F6E56; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 5px; }
+
+.searchRow { display: flex; gap: 8px; }
+.searchBtn { padding: 10px 14px; background: #f0f0f0; border: none; border-radius: 9px; font-size: 16px; cursor: pointer; }
+.searchBtn:hover { background: #e0e0e0; }
+.searchResults { border: 1px solid #eee; border-radius: 9px; overflow: hidden; margin-top: 6px; }
+.searchResult { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f5f5f5; transition: background 0.12s; }
+.searchResult:last-child { border-bottom: none; }
+.searchResult:hover { background: #f5fdf9; }
+.resultName { font-size: 14px; font-weight: 500; color: #111; }
+.resultMeta { font-size: 12px; color: #aaa; margin-top: 1px; }
+.resultRank { background: #E1F5EE; color: #0F6E56; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 5px; }
+.selectedOpponent { display: flex; align-items: center; gap: 8px; background: #f5fdf9; border: 1px solid #d0ede2; border-radius: 9px; padding: 8px 12px; margin-top: 6px; }
+.selectedCheck { color: #1D9E75; font-weight: 700; font-size: 16px; }
+.selectedRank { background: #E1F5EE; color: #0F6E56; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 5px; margin-left: auto; }
+
+.startBtn { width: 100%; padding: 14px; background: #1D9E75; color: #fff; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; margin-top: 0.5rem; }
+.startBtn:hover:not(:disabled) { background: #0F6E56; }
+.startBtn:disabled { opacity: 0.5; cursor: not-allowed; }

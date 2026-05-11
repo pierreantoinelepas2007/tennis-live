@@ -1,0 +1,45 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --green: #1D9E75;
+  --green-dark: #0F6E56;
+  --green-light: #E1F5EE;
+  --red: #ff4757;
+  --text: #111;
+  --muted: #888;
+  --border: #eee;
+  --bg: #f7f7f5;
+  --card: #fff;
+  --radius: 12px;
+}
+
+
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  /* Prevent zoom on input focus on iOS */
+  -webkit-text-size-adjust: 100%;
+}
+
+a { color: inherit; }
+button { font-family: inherit; }
+input, select, textarea { font-family: inherit; }
+main { min-height: calc(100vh - 60px); }
+
+/* Mobile tap highlight */
+button, a { -webkit-tap-highlight-color: transparent; }
+
+/* Better touch targets on mobile */
+@media (max-width: 600px) {
+  button { min-height: 44px; }
+  input, select { min-height: 44px; font-size: 16px !important; /* prevent iOS zoom */ }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
