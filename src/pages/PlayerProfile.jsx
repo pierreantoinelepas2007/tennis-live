@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styles from './PlayerProfile.module.css';
 
-const BACKEND = 'http://localhost:4000';
+const BACKEND = 'https://tennis-live-backend-1.onrender.com';
 
 export default function PlayerProfile() {
   const { aftId } = useParams();
