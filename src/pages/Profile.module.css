@@ -41,3 +41,16 @@
 .unlinkBtn:hover { background: #fdf3f2; color: #c0392b; border-color: #f5c6c2; }
 .logoutBtn { padding: 10px; border: 1px solid #eee; background: #fff; color: #888; border-radius: 10px; font-size: 14px; cursor: pointer; font-family: inherit; width: 100%; }
 .logoutBtn:hover { background: #fdf3f2; color: #c0392b; }
+.shareProfileBtn {
+  width: 100%;
+  padding: 10px;
+  background: #f5fdf9;
+  border: 1px solid #d0ede2;
+  color: #0F6E56;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+.shareProfileBtn:hover { background: #E1F5EE; }

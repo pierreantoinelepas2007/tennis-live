@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ref, onValue } from 'firebase/database';
 import { db } from '../firebase';
@@ -12,9 +12,9 @@ export default function Feed() {
   const [liveMatches, setLiveMatches] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [notified, setNotified] = useState({});
+  const [newMatchAlert, setNewMatchAlert] = useState(null);
+  const prevMatchIds = useRef(new Set());
 
-  // Charger les favoris de l'utilisateur
   useEffect(() => {
     if (!user) return;
     const favRef = ref(db, `users/${user.uid}/favorites`);
@@ -23,39 +23,53 @@ export default function Feed() {
     });
   }, [user]);
 
-  // Charger tous les matchs live
   useEffect(() => {
     const matchesRef = ref(db, 'matches');
     return onValue(matchesRef, snap => {
       if (!snap.exists()) { setLiveMatches([]); setLoading(false); return; }
       const all = Object.values(snap.val());
-      const live = all.filter(m => m.status === 'live' || 
-        (m.status === 'finished' && Date.now() - m.updatedAt < 3600000));
+      const live = all.filter(m => {
+        if (m.status === 'live') return true;
+        if (m.status === 'finished' && Date.now() - (m.updatedAt || 0) < 3600000) return true;
+        return false;
+      });
       live.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-      setLiveMatches(live);
-      setLoading(false);
 
-      // Notifications pour les favoris
+      // Détecter nouveaux matchs de favoris
+      const favNames = favorites.map(f => f.name?.toLowerCase());
       live.forEach(m => {
-        if (m.status === 'live' && !notified[m.id]) {
-          const favNames = favorites.map(f => f.name?.toLowerCase());
-          const isTracked = favNames.some(n => 
-            m.playerA?.toLowerCase().includes(n) || 
+        if (m.status === 'live' && !prevMatchIds.current.has(m.id)) {
+          const isFavMatch = favNames.some(n =>
+            m.playerA?.toLowerCase().includes(n) ||
             m.playerB?.toLowerCase().includes(n)
           );
-          if (isTracked && 'Notification' in window && Notification.permission === 'granted') {
-            new Notification('🎾 Match en cours !', {
-              body: `${m.playerA} vs ${m.playerB} — Score live disponible`,
-            });
-            setNotified(prev => ({ ...prev, [m.id]: true }));
+          if (isFavMatch && prevMatchIds.current.size > 0) {
+            setNewMatchAlert(`${m.playerA} vs ${m.playerB} vient de commencer !`);
+            // Notification navigateur
+            if (Notification.permission === 'granted') {
+              new Notification('🎾 Match en cours !', {
+                body: `${m.playerA} vs ${m.playerB}`,
+                icon: '/favicon.ico'
+              });
+            }
+            setTimeout(() => setNewMatchAlert(null), 5000);
           }
+          prevMatchIds.current.add(m.id);
         }
       });
+
+      setLiveMatches(live);
+      setLoading(false);
     });
   }, [favorites]);
 
   function requestNotifications() {
-    if ('Notification' in window) Notification.requestPermission();
+    if ('Notification' in window) {
+      Notification.requestPermission().then(p => {
+        if (p === 'granted') alert('Notifications activées ! Tu seras prévenu quand un favori joue.');
+        else alert('Notifications refusées. Active-les dans les paramètres de ton navigateur.');
+      });
+    }
   }
 
   const favNames = favorites.map(f => f.name?.toLowerCase());
@@ -72,6 +86,12 @@ export default function Feed() {
           <h1 className={styles.heroTitle}>TennisLive</h1>
           <p className={styles.heroSub}>Score en direct · Suis tes joueurs favoris · Encouragements live</p>
           <button className={styles.heroBtn} onClick={() => navigate('/login')}>Commencer gratuitement →</button>
+          <div className={styles.features}>
+            <div className={styles.feature}><span>📡</span><span>Score live partageable</span></div>
+            <div className={styles.feature}><span>💬</span><span>Messages d'encouragement</span></div>
+            <div className={styles.feature}><span>📊</span><span>Stats et historique</span></div>
+            <div className={styles.feature}><span>🏆</span><span>Classement AFT intégré</span></div>
+          </div>
         </div>
       </div>
     );
@@ -79,6 +99,13 @@ export default function Feed() {
 
   return (
     <div className={styles.page}>
+      {/* Alerte nouveau match favori */}
+      {newMatchAlert && (
+        <div className={styles.alert}>
+          ⭐ {newMatchAlert}
+        </div>
+      )}
+
       <div className={styles.topBar}>
         <h1 className={styles.title}>En direct</h1>
         <button className={styles.notifBtn} onClick={requestNotifications} title="Activer les notifications">
@@ -88,7 +115,6 @@ export default function Feed() {
 
       {loading && <div className={styles.loading}>Chargement des matchs…</div>}
 
-      {/* Matchs de tes favoris */}
       {favMatches.length > 0 && (
         <div className={styles.section}>
           <div className={styles.sectionLabel}>⭐ Tes favoris jouent</div>
@@ -96,7 +122,6 @@ export default function Feed() {
         </div>
       )}
 
-      {/* Tous les matchs live */}
       {otherMatches.length > 0 && (
         <div className={styles.section}>
           <div className={styles.sectionLabel}>🎾 Matchs en cours</div>
@@ -108,9 +133,7 @@ export default function Feed() {
         <div className={styles.empty}>
           <div className={styles.emptyIcon}>🎾</div>
           <p>Aucun match en cours pour l'instant.</p>
-          <button className={styles.newBtn} onClick={() => navigate('/match/new')}>
-            Démarrer un match
-          </button>
+          <button className={styles.newBtn} onClick={() => navigate('/match/new')}>Démarrer un match</button>
         </div>
       )}
 
@@ -132,9 +155,11 @@ function MatchCard({ match, onClick, highlight }) {
   }, [match.id]);
 
   const score = getScore(liveMatch);
-  const setsWon = getSetsWon(liveMatch);
   const isLive = liveMatch.status === 'live';
   const elapsed = Math.round((Date.now() - liveMatch.startedAt) / 60000);
+  const matchTypeIcon = liveMatch.matchType === 'tournament' ? '🏆' :
+                        liveMatch.matchType === 'interclub' ? '👥' :
+                        liveMatch.matchType === 'training' ? '💪' : '🎾';
 
   return (
     <div className={`${styles.matchCard} ${highlight ? styles.matchCardHighlight : ''}`} onClick={onClick}>
@@ -142,7 +167,9 @@ function MatchCard({ match, onClick, highlight }) {
         <span className={isLive ? styles.livePill : styles.finishedPill}>
           {isLive ? '● Live' : '✓ Terminé'}
         </span>
-        <span className={styles.cardMeta}>{liveMatch.surface} · {isLive ? `${elapsed} min` : formatScore(liveMatch)}</span>
+        <span className={styles.cardMeta}>
+          {matchTypeIcon} {liveMatch.surface} · {isLive ? `${elapsed} min` : (liveMatch.sets || []).map(s => `${s.a}-${s.b}`).join(' ')}
+        </span>
       </div>
 
       {['a', 'b'].map(p => {
@@ -166,9 +193,4 @@ function MatchCard({ match, onClick, highlight }) {
       })}
     </div>
   );
-}
-
-function formatScore(match) {
-  if (!match.sets || !match.sets.length) return '';
-  return match.sets.map(s => `${s.a}-${s.b}`).join(' ');
 }

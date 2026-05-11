@@ -13,7 +13,7 @@ import Players from './pages/Players';
 import PlayerProfile from './pages/PlayerProfile';
 import NotFound from './pages/NotFound';
 import './index.css';
-
+import PublicProfile from './pages/PublicProfile';
 function Layout({ children }) {
   return (
     <>
@@ -39,6 +39,7 @@ export default function App() {
           <Route path="/players" element={<Layout><Players /></Layout>} />
           <Route path="/player/:aftId" element={<Layout><PlayerProfile /></Layout>} />
           <Route path="*" element={<NotFound />} />
+          <Route path="/u/:uid" element={<PublicProfile />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
