@@ -5,7 +5,7 @@ import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import styles from './Profile.module.css';
 
-const BACKEND = 'http://localhost:4000';
+const BACKEND = 'https://tennis-live-backend-1.onrender.com';
 
 export default function Profile() {
   const { user, profile, updateProfile, logout } = useAuth();
