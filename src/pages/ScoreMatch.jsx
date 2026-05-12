@@ -145,12 +145,12 @@ export default function ScoreMatch() {
           <span>Jeux : {(match.games && match.games.a) || 0} - {(match.games && match.games.b) || 0}</span>
         </div>
       </div>
-       <button
-         onClick={() => navigate('/match/' + matchId + '/play')}
-         style={{width:'100%',padding:'12px',background:'#1a5c40',color:'#fff',border:'none',borderRadius:'10px',fontSize:'15px',fontWeight:'600',cursor:'pointer',fontFamily:'inherit',marginBottom:'8px'}}
-       >
-         Mode match plein ecran →
-       </button>
+        <button
+            onClick={() => navigate('/match/' + matchId + '/play')}
+            style={{width:'100%',padding:'12px',background:'#1a5c40',color:'#fff',border:'none',borderRadius:'10px',fontSize:'15px',fontWeight:'600',cursor:'pointer',fontFamily:'inherit',marginBottom:'8px'}}
+        >
+            Mode match plein ecran →
+        </button>
       <div className={styles.shareCard}>
         <div className={styles.shareTitle}>Partager le score live</div>
         <p className={styles.shareDesc}>Tes proches peuvent suivre le match et envoyer des encouragements.</p>

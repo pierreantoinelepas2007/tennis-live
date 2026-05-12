@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import styles from './Profile.module.css';
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import styles from './Profile.module.css';
+
 const BACKEND = 'https://tennis-live-backend-1.onrender.com';
 
 export default function Profile() {
@@ -18,10 +19,30 @@ export default function Profile() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (profile) {
-      setName(profile.name || '');
-    }
+    if (profile) setName(profile.name || '');
   }, [profile]);
+
+  useEffect(() => {
+    if (!user) navigate('/login');
+  }, [user]);
+
+  async function uploadPhoto(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5000000) { alert('Photo trop grande (max 5MB)'); return; }
+    setSaving(true);
+    try {
+      const photoRef = storageRef(storage, 'avatars/' + user.uid);
+      await uploadBytes(photoRef, file);
+      const url = await getDownloadURL(photoRef);
+      await updateProfile({ photoURL: url });
+    } catch (e) {
+      console.error(e);
+      alert('Erreur upload photo');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function searchAFT() {
     if (!search.trim() || search.length < 2) return;
@@ -68,14 +89,9 @@ export default function Profile() {
   async function unlinkAFT() {
     if (!confirm('Delier ton profil AFT ?')) return;
     await updateProfile({
-      aftNumber: null,
-      aftRanking: null,
-      aftPoints: null,
-      aftVictories: null,
-      aftDefeats: null,
-      club: null,
-      aftName: null,
-      aftLinked: false,
+      aftNumber: null, aftRanking: null, aftPoints: null,
+      aftVictories: null, aftDefeats: null, club: null,
+      aftName: null, aftLinked: false,
     });
   }
 
@@ -86,23 +102,6 @@ export default function Profile() {
     setSaving(false);
     setEditing(false);
   }
-async function uploadPhoto(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  if (file.size > 5000000) { alert('Photo trop grande (max 5MB)'); return; }
-  setSaving(true);
-  try {
-    const photoRef = storageRef(storage, 'avatars/' + user.uid);
-    await uploadBytes(photoRef, file);
-    const url = await getDownloadURL(photoRef);
-    await updateProfile({ photoURL: url });
-  } catch (e) {
-    console.error(e);
-    alert('Erreur upload photo');
-  } finally {
-    setSaving(false);
-  }
-}
 
   function shareProfile() {
     const url = window.location.origin + '/u/' + user.uid;
@@ -111,7 +110,7 @@ async function uploadPhoto(e) {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  if (!user) { navigate('/login'); return null; }
+  if (!user) return null;
 
   const initials = (profile?.name || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 
@@ -120,22 +119,29 @@ async function uploadPhoto(e) {
       <h1 className={styles.title}>Mon profil</h1>
 
       <div className={styles.profileCard}>
-        <div className={styles.avatar} style={{position:'relative',cursor:'pointer'}} onClick={() => document.getElementById('photoInput').click()}>
-  {profile?.photoURL
-    ? <img src={profile.photoURL} alt="avatar" className={styles.avatarImg} />
-    : <span>{initials}</span>
-  }
-  <div style={{position:'absolute',bottom:0,right:0,background:'#1D9E75',borderRadius:'50%',width:'22px',height:'22px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',border:'2px solid #fff'}}>
-    📷
-  </div>
-  <input
-    id="photoInput"
-    type="file"
-    accept="image/*"
-    style={{display:'none'}}
-    onChange={uploadPhoto}
-  />
-</div>
+        <div className={styles.avatarSection}>
+
+          <div
+            className={styles.avatar}
+            style={{position:'relative',cursor:'pointer'}}
+            onClick={() => document.getElementById('photoInput').click()}
+          >
+            {profile?.photoURL
+              ? <img src={profile.photoURL} alt="avatar" className={styles.avatarImg} />
+              : <span>{initials}</span>
+            }
+            <div style={{position:'absolute',bottom:0,right:0,background:'#1D9E75',borderRadius:'50%',width:'22px',height:'22px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',border:'2px solid #fff'}}>
+              📷
+            </div>
+            <input
+              id="photoInput"
+              type="file"
+              accept="image/*"
+              style={{display:'none'}}
+              onChange={uploadPhoto}
+            />
+          </div>
+
           <div style={{flex:1}}>
             {editing ? (
               <div className={styles.editRow}>
@@ -146,19 +152,13 @@ async function uploadPhoto(e) {
             ) : (
               <div className={styles.nameRow}>
                 <h2 className={styles.profileName}>{profile?.name}</h2>
-                <button className={styles.editBtn} onClick={() => { setName(profile?.name || ''); setEditing(true); }}>
-                  edit
-                </button>
+                <button className={styles.editBtn} onClick={() => { setName(profile?.name || ''); setEditing(true); }}>✏️</button>
               </div>
             )}
             <p className={styles.email}>{user.email}</p>
             <div className={styles.badges}>
-              {profile?.aftLinked && (
-                <span className={styles.aftBadge}>AFT #{profile.aftNumber}</span>
-              )}
-              {profile?.club && (
-                <span className={styles.clubBadge}>{profile.club}</span>
-              )}
+              {profile?.aftLinked && <span className={styles.aftBadge}>AFT #{profile.aftNumber}</span>}
+              {profile?.club && <span className={styles.clubBadge}>{profile.club}</span>}
             </div>
           </div>
         </div>
@@ -178,11 +178,7 @@ async function uploadPhoto(e) {
               <div className={styles.statLbl}>Points AFT</div>
             </div>
             <div className={styles.statItem}>
-              <div
-                className={styles.statVal}
-                style={{fontSize:'13px',color:'#1D9E75',cursor:'pointer'}}
-                onClick={() => navigate('/player/' + profile.aftNumber)}
-              >
+              <div className={styles.statVal} style={{fontSize:'13px',color:'#1D9E75',cursor:'pointer'}} onClick={() => navigate('/player/' + profile.aftNumber)}>
                 Voir
               </div>
               <div className={styles.statLbl}>Profil complet</div>
