@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ref, onValue } from 'firebase/database';
+import { ref, onValue, remove } from 'firebase/database';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import styles from './History.module.css';
@@ -13,8 +13,6 @@ export default function History() {
 
   useEffect(() => {
     if (!user) return;
-
-    // Charger directement tous les matchs de Firebase où ownerUid = user.uid
     const matchesRef = ref(db, 'matches');
     return onValue(matchesRef, snap => {
       if (!snap.exists()) { setMatches([]); setLoading(false); return; }
@@ -28,12 +26,21 @@ export default function History() {
   }, [user]);
 
   useEffect(() => {
-  if (!user) navigate('/login');
-}, [user]);
+    if (!user) navigate('/login');
+  }, [user]);
+
+  async function deleteMatch(match) {
+    if (!confirm('Supprimer ce match ?')) return;
+    try {
+      await remove(ref(db, 'matches/' + match.id));
+      await remove(ref(db, 'users/' + user.uid + '/matches/' + match.id));
+    } catch (e) {
+      console.error(e);
+    }
+  }
 
   const finished = matches.filter(m => m.status === 'finished');
   const live = matches.filter(m => m.status === 'live');
-
   const wins = finished.filter(m => m.winner === 'a').length;
   const losses = finished.filter(m => m.winner === 'b').length;
   const winRate = finished.length ? Math.round((wins / finished.length) * 100) : 0;
@@ -42,11 +49,10 @@ export default function History() {
     <div className={styles.page}>
       <h1 className={styles.title}>Historique</h1>
 
-      {/* Stats */}
       {finished.length > 0 && (
         <div className={styles.statsGrid}>
           <div className={styles.statCard}>
-            <div className={styles.statVal} style={{ color: '#1D9E75' }}>{wins}–{losses}</div>
+            <div className={styles.statVal} style={{color:'#1D9E75'}}>{wins}–{losses}</div>
             <div className={styles.statLabel}>Bilan</div>
           </div>
           <div className={styles.statCard}>
@@ -64,22 +70,30 @@ export default function History() {
         </div>
       )}
 
-      {/* Matchs en cours */}
       {live.length > 0 && (
         <>
           <div className={styles.sectionLabel}>🎾 En cours</div>
           {live.map(m => (
-            <MatchRow key={m.id} match={m} onClick={() => navigate(`/match/${m.id}`)} />
+            <MatchRow
+              key={m.id}
+              match={m}
+              onClick={() => navigate('/match/' + m.id)}
+              onDelete={deleteMatch}
+            />
           ))}
         </>
       )}
 
-      {/* Matchs terminés */}
       {finished.length > 0 && (
         <>
           <div className={styles.sectionLabel}>Terminés</div>
           {finished.map(m => (
-            <MatchRow key={m.id} match={m} onClick={() => navigate(`/watch/${m.id}`)} />
+            <MatchRow
+              key={m.id}
+              match={m}
+              onClick={() => navigate('/watch/' + m.id)}
+              onDelete={deleteMatch}
+            />
           ))}
         </>
       )}
@@ -99,36 +113,36 @@ export default function History() {
   );
 }
 
-function MatchRow({ match, onClick }) {
+function MatchRow({ match, onClick, onDelete }) {
   const isLive = match.status === 'live';
   const isWin = match.status === 'finished' && match.winner === 'a';
-  const isLoss = match.status === 'finished' && match.winner === 'b';
-  const score = (match.sets || []).map(s => `${s.a}-${s.b}`).join(', ');
-  const date = new Date(match.startedAt).toLocaleDateString('fr-BE', { day: '2-digit', month: '2-digit', year: '2-digit' });
-  const duration = match.updatedAt && match.startedAt
-    ? Math.round((match.updatedAt - match.startedAt) / 60000)
-    : null;
+  const score = (match.sets || []).map(s => s.a + '-' + s.b).join(', ');
+  const date = new Date(match.startedAt).toLocaleDateString('fr-BE', {
+    day: '2-digit', month: '2-digit', year: '2-digit'
+  });
+  const typeIcon = match.matchType === 'tournament' ? '🏆' :
+                   match.matchType === 'interclub' ? '👥' :
+                   match.matchType === 'training' ? '💪' : '🎾';
 
   return (
-    <div className={styles.matchRow} onClick={onClick}>
+    <div className={styles.matchItem} onClick={onClick}>
       <div className={`${styles.resultBadge} ${isLive ? styles.badgeLive : isWin ? styles.badgeWin : styles.badgeLoss}`}>
         {isLive ? '●' : isWin ? 'V' : 'D'}
       </div>
       <div className={styles.matchInfo}>
         <div className={styles.opponent}>
-          vs {match.playerB}
+          {typeIcon} vs {match.playerB}
           {isLive && <span className={styles.livePill}>Live</span>}
         </div>
-        <div className={styles.matchMeta}>
-          {date} · {match.surface}
-          {duration && duration > 0 && ` · ${duration} min`}
-        </div>
+        <div className={styles.matchMeta}>{date} · {match.surface}</div>
       </div>
-      <div className={styles.matchScore}>
-        {isLive ? (
-          <span style={{ color: '#ff4757', fontSize: '12px' }}>En cours</span>
-        ) : score}
-      </div>
+      <div className={styles.matchScore}>{isLive ? 'En cours' : score}</div>
+      <button
+        className={styles.deleteBtn}
+        onClick={e => { e.stopPropagation(); onDelete(match); }}
+      >
+        🗑
+      </button>
     </div>
   );
 }
