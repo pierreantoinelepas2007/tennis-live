@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import styles from './Profile.module.css';
-
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../firebase';
 const BACKEND = 'https://tennis-live-backend-1.onrender.com';
 
 export default function Profile() {
@@ -85,6 +86,23 @@ export default function Profile() {
     setSaving(false);
     setEditing(false);
   }
+async function uploadPhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 5000000) { alert('Photo trop grande (max 5MB)'); return; }
+  setSaving(true);
+  try {
+    const photoRef = storageRef(storage, 'avatars/' + user.uid);
+    await uploadBytes(photoRef, file);
+    const url = await getDownloadURL(photoRef);
+    await updateProfile({ photoURL: url });
+  } catch (e) {
+    console.error(e);
+    alert('Erreur upload photo');
+  } finally {
+    setSaving(false);
+  }
+}
 
   function shareProfile() {
     const url = window.location.origin + '/u/' + user.uid;
@@ -102,13 +120,22 @@ export default function Profile() {
       <h1 className={styles.title}>Mon profil</h1>
 
       <div className={styles.profileCard}>
-        <div className={styles.avatarSection}>
-          <div className={styles.avatar}>
-            {profile?.photoURL
-              ? <img src={profile.photoURL} alt="avatar" className={styles.avatarImg} />
-              : <span>{initials}</span>
-            }
-          </div>
+        <div className={styles.avatar} style={{position:'relative',cursor:'pointer'}} onClick={() => document.getElementById('photoInput').click()}>
+  {profile?.photoURL
+    ? <img src={profile.photoURL} alt="avatar" className={styles.avatarImg} />
+    : <span>{initials}</span>
+  }
+  <div style={{position:'absolute',bottom:0,right:0,background:'#1D9E75',borderRadius:'50%',width:'22px',height:'22px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',border:'2px solid #fff'}}>
+    📷
+  </div>
+  <input
+    id="photoInput"
+    type="file"
+    accept="image/*"
+    style={{display:'none'}}
+    onChange={uploadPhoto}
+  />
+</div>
           <div style={{flex:1}}>
             {editing ? (
               <div className={styles.editRow}>
