@@ -16,6 +16,11 @@ import './index.css';
 import PublicProfile from './pages/PublicProfile';
 import MatchMode from './pages/MatchMode';
 import Toss from './pages/Toss';
+// Garde le backend éveillé
+const BACKEND = 'https://tennis-live-backend-1.onrender.com';
+setInterval(() => {
+  fetch(BACKEND + '/ping').catch(() => {});
+}, 600000); // toutes les 10 minutes
 function Layout({ children }) {
   return (
     <>
