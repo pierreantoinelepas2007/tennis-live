@@ -15,6 +15,8 @@ export default function Navbar() {
           <span className={styles.logoText}>TennisLive</span>
         </div>
         <div className={styles.links}>
+
+          <NavLink to="/club" className={({ isActive }) => isActive ? styles.linkActive : styles.link}>Club</NavLink>
           <NavLink to="/" end className={({ isActive }) => isActive ? styles.linkActive : styles.link}>En direct</NavLink>
           <NavLink to="/players" className={({ isActive }) => isActive ? styles.linkActive : styles.link}>Joueurs</NavLink>
           <NavLink to="/history" className={({ isActive }) => isActive ? styles.linkActive : styles.link}>Historique</NavLink>

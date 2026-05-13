@@ -77,7 +77,14 @@ export default function Feed() {
     favNames.some(n => m.playerA?.toLowerCase().includes(n) || m.playerB?.toLowerCase().includes(n))
   );
   const otherMatches = liveMatches.filter(m => !favMatches.includes(m));
+  const [following, setFollowing] = useState([]);
 
+useEffect(() => {
+  if (!user) return;
+  onValue(ref(db, 'users/' + user.uid + '/favorites'), snap => {
+    setFollowing(snap.exists() ? Object.values(snap.val()) : []);
+  });
+}, [user]);
   if (!user) {
     return (
       <div className={styles.hero}>

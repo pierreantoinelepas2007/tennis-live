@@ -16,6 +16,7 @@ import './index.css';
 import PublicProfile from './pages/PublicProfile';
 import MatchMode from './pages/MatchMode';
 import Toss from './pages/Toss';
+import Club from './pages/Club';
 // Garde le backend éveillé
 const BACKEND = 'https://tennis-live-backend-1.onrender.com';
 setInterval(() => {
@@ -35,6 +36,8 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+
+          <Route path="/club" element={<Layout><Club /></Layout>} />
           <Route path="/watch/:matchId" element={<WatchMatch />} />
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<Layout><Feed /></Layout>} />
