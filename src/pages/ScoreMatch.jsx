@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ref, onValue, set } from 'firebase/database';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { addPoint, undoPoint, getScore, getSetsWon, formatScore } from '../utils/tennisLogic';
+import { addPoint, getScore, getSetsWon, formatScore } from '../utils/tennisLogic';
 import LiveChat from '../components/LiveChat';
 import styles from './ScoreMatch.module.css';
 
@@ -12,6 +12,7 @@ export default function ScoreMatch() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [match, setMatch] = useState(null);
+  const [localHistory, setLocalHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [shareToast, setShareToast] = useState(false);
@@ -41,6 +42,8 @@ export default function ScoreMatch() {
 
   async function handlePoint(player) {
     if (!match || match.status === 'finished') return;
+    const snapshot = JSON.parse(JSON.stringify(match));
+    setLocalHistory(prev => [...prev, snapshot]);
     const updated = addPoint(match, player);
     setMatch(updated);
     await saveMatch(updated);
@@ -53,12 +56,12 @@ export default function ScoreMatch() {
   }
 
   async function handleUndo() {
-    if (!match) return;
-    const history = match.history || [];
-    if (history.length === 0) return;
-    const restored = undoPoint(match);
-    setMatch(restored);
-    await saveMatch(restored);
+    if (localHistory.length === 0) return;
+    const history = [...localHistory];
+    const previous = history.pop();
+    setLocalHistory(history);
+    setMatch(previous);
+    await saveMatch(previous);
   }
 
   function copyShareLink() {
@@ -72,7 +75,8 @@ export default function ScoreMatch() {
 
   const score = getScore(match);
   const setsWon = getSetsWon(match);
-  const history = match.history || [];
+  const waText = encodeURIComponent('Suis mon match en direct\n' + shareUrl);
+  const smsText = encodeURIComponent('Suis mon match ' + shareUrl);
 
   return (
     <div className={styles.page}>
@@ -80,12 +84,12 @@ export default function ScoreMatch() {
         <div className={styles.matchHeader}>
           <div className={styles.headerLeft}>
             <span className={match.status === 'live' ? styles.liveBadge : styles.finishedBadge}>
-              {match.status === 'live' ? 'Live' : 'Termine'}
+              {match.status === 'live' ? '● Live' : 'Termine'}
             </span>
             <span className={styles.surface}>{match.surface}</span>
           </div>
           <span className={styles.setInfo}>Set {(match.sets || []).length + 1}</span>
-          {saving && <span className={styles.saving}>saving</span>}
+          {saving && <span className={styles.saving}>...</span>}
         </div>
 
         <div className={styles.scoreBoard}>
@@ -135,8 +139,12 @@ export default function ScoreMatch() {
           </div>
         )}
 
-        <button className={styles.undoBtn} onClick={handleUndo} disabled={history.length === 0}>
-          Annuler dernier point
+        <button
+          className={styles.undoBtn}
+          onClick={handleUndo}
+          disabled={localHistory.length === 0}
+        >
+          ↩ Annuler dernier point
         </button>
 
         <div className={styles.stats}>
@@ -145,12 +153,14 @@ export default function ScoreMatch() {
           <span>Jeux : {(match.games && match.games.a) || 0} - {(match.games && match.games.b) || 0}</span>
         </div>
       </div>
-        <button
-            onClick={() => navigate('/match/' + matchId + '/play')}
-            style={{width:'100%',padding:'12px',background:'#1a5c40',color:'#fff',border:'none',borderRadius:'10px',fontSize:'15px',fontWeight:'600',cursor:'pointer',fontFamily:'inherit',marginBottom:'8px'}}
-        >
-            Mode match plein ecran →
-        </button>
+
+      <button
+        onClick={() => navigate('/match/' + matchId + '/play')}
+        style={{width:'100%',padding:'12px',background:'#1a5c40',color:'#fff',border:'none',borderRadius:'6px',fontSize:'15px',fontWeight:'600',cursor:'pointer',fontFamily:'inherit',marginBottom:'8px'}}
+      >
+        Mode match plein ecran →
+      </button>
+
       <div className={styles.shareCard}>
         <div className={styles.shareTitle}>Partager le score live</div>
         <p className={styles.shareDesc}>Tes proches peuvent suivre le match et envoyer des encouragements.</p>
@@ -161,18 +171,10 @@ export default function ScoreMatch() {
           </button>
         </div>
         <div className={styles.shareActions}>
-          <a
-            href={'https://wa.me/?text=' + encodeURIComponent('Suis mon match en direct\n' + shareUrl)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.whatsappBtn}
-          >
+          <a href={'https://wa.me/?text=' + waText} target="_blank" rel="noopener noreferrer" className={styles.whatsappBtn}>
             WhatsApp
           </a>
-          <a
-            href={'sms:?body=' + encodeURIComponent('Suis mon match ' + shareUrl)}
-            className={styles.smsBtn}
-          >
+          <a href={'sms:?body=' + smsText} className={styles.smsBtn}>
             SMS
           </a>
         </div>
