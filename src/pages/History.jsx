@@ -10,6 +10,11 @@ export default function History() {
   const navigate = useNavigate();
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [filterSurface, setFilterSurface] = useState('Toutes');
+  const [filterType, setFilterType] = useState('Tous');
+  const [filterResult, setFilterResult] = useState('Tous');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -39,34 +44,137 @@ export default function History() {
     }
   }
 
-  const finished = matches.filter(m => m.status === 'finished');
-  const live = matches.filter(m => m.status === 'live');
-  const wins = finished.filter(m => m.winner === 'a').length;
-  const losses = finished.filter(m => m.winner === 'b').length;
-  const winRate = finished.length ? Math.round((wins / finished.length) * 100) : 0;
+  function resetFilters() {
+    setSearch('');
+    setFilterSurface('Toutes');
+    setFilterType('Tous');
+    setFilterResult('Tous');
+  }
+
+  const filtered = matches.filter(m => {
+    if (search && !m.playerB?.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filterSurface !== 'Toutes' && m.surface !== filterSurface) return false;
+    if (filterType !== 'Tous' && m.matchType !== filterType) return false;
+    if (filterResult === 'Victoires' && m.winner !== 'a') return false;
+    if (filterResult === 'Defaites' && m.winner !== 'b') return false;
+    if (filterResult === 'En cours' && m.status !== 'live') return false;
+    return true;
+  });
+
+  const finished = filtered.filter(m => m.status === 'finished');
+  const live = filtered.filter(m => m.status === 'live');
+  const allFinished = matches.filter(m => m.status === 'finished');
+  const wins = allFinished.filter(m => m.winner === 'a').length;
+  const losses = allFinished.filter(m => m.winner === 'b').length;
+  const winRate = allFinished.length ? Math.round((wins / allFinished.length) * 100) : 0;
+
+  const hasFilters = search || filterSurface !== 'Toutes' || filterType !== 'Tous' || filterResult !== 'Tous';
 
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>Historique</h1>
 
-      {finished.length > 0 && (
+      {allFinished.length > 0 && (
         <div className={styles.statsGrid}>
           <div className={styles.statCard}>
             <div className={styles.statVal} style={{color:'#1D9E75'}}>{wins}–{losses}</div>
-            <div className={styles.statLabel}>Bilan</div>
+            <div className={styles.statLabel}>Bilan total</div>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statVal}>{winRate}%</div>
             <div className={styles.statLabel}>Win rate</div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statVal}>{finished.length}</div>
+            <div className={styles.statVal}>{allFinished.length}</div>
             <div className={styles.statLabel}>Matchs joués</div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statVal}>{live.length}</div>
+            <div className={styles.statVal}>{matches.filter(m => m.status === 'live').length}</div>
             <div className={styles.statLabel}>En cours</div>
           </div>
+        </div>
+      )}
+
+      {/* Barre de recherche + filtres */}
+      <div className={styles.filterBar}>
+        <input
+          className={styles.searchInput}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Rechercher un adversaire..."
+        />
+        <button
+          className={`${styles.filterToggle} ${showFilters ? styles.filterToggleActive : ''}`}
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          ⚙️ {hasFilters ? '•' : ''}
+        </button>
+      </div>
+
+      {showFilters && (
+        <div className={styles.filtersPanel}>
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>Surface</label>
+            <div className={styles.filterChips}>
+              {['Toutes','Terre battue','Dur','Gazon','Moquette'].map(s => (
+                <button
+                  key={s}
+                  className={`${styles.chip} ${filterSurface === s ? styles.chipActive : ''}`}
+                  onClick={() => setFilterSurface(s)}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>Type</label>
+            <div className={styles.filterChips}>
+              {[
+                {val:'Tous', label:'Tous'},
+                {val:'friendly', label:'🎾 Amical'},
+                {val:'tournament', label:'🏆 Tournoi'},
+                {val:'interclub', label:'👥 Interclub'},
+                {val:'training', label:'💪 Entraînement'},
+              ].map(t => (
+                <button
+                  key={t.val}
+                  className={`${styles.chip} ${filterType === t.val ? styles.chipActive : ''}`}
+                  onClick={() => setFilterType(t.val)}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.filterGroup}>
+            <label className={styles.filterLabel}>Résultat</label>
+            <div className={styles.filterChips}>
+              {['Tous','Victoires','Defaites','En cours'].map(r => (
+                <button
+                  key={r}
+                  className={`${styles.chip} ${filterResult === r ? styles.chipActive : ''}`}
+                  onClick={() => setFilterResult(r)}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {hasFilters && (
+            <button className={styles.resetBtn} onClick={resetFilters}>
+              Réinitialiser les filtres
+            </button>
+          )}
+        </div>
+      )}
+
+      {hasFilters && (
+        <div className={styles.filterSummary}>
+          {filtered.length} match{filtered.length !== 1 ? 's' : ''} trouvé{filtered.length !== 1 ? 's' : ''}
         </div>
       )}
 
@@ -74,12 +182,7 @@ export default function History() {
         <>
           <div className={styles.sectionLabel}>🎾 En cours</div>
           {live.map(m => (
-            <MatchRow
-              key={m.id}
-              match={m}
-              onClick={() => navigate('/match/' + m.id)}
-              onDelete={deleteMatch}
-            />
+            <MatchRow key={m.id} match={m} onClick={() => navigate('/match/' + m.id)} onDelete={deleteMatch} />
           ))}
         </>
       )}
@@ -88,25 +191,21 @@ export default function History() {
         <>
           <div className={styles.sectionLabel}>Terminés</div>
           {finished.map(m => (
-            <MatchRow
-              key={m.id}
-              match={m}
-              onClick={() => navigate('/watch/' + m.id)}
-              onDelete={deleteMatch}
-            />
+            <MatchRow key={m.id} match={m} onClick={() => navigate('/watch/' + m.id)} onDelete={deleteMatch} />
           ))}
         </>
       )}
 
       {loading && <div className={styles.loading}>Chargement…</div>}
 
-      {!loading && matches.length === 0 && (
+      {!loading && filtered.length === 0 && (
         <div className={styles.empty}>
-          <div className={styles.emptyIcon}>🎾</div>
-          <p>Pas encore de match enregistré.</p>
-          <button className={styles.newBtn} onClick={() => navigate('/match/new')}>
-            Démarrer un match
-          </button>
+          <div className={styles.emptyIcon}>{hasFilters ? '🔍' : '🎾'}</div>
+          <p>{hasFilters ? 'Aucun match pour ces filtres.' : 'Pas encore de match enregistré.'}</p>
+          {hasFilters
+            ? <button className={styles.newBtn} onClick={resetFilters}>Effacer les filtres</button>
+            : <button className={styles.newBtn} onClick={() => navigate('/match/new')}>Démarrer un match</button>
+          }
         </div>
       )}
     </div>
