@@ -15,6 +15,7 @@ import NotFound from './pages/NotFound';
 import './index.css';
 import PublicProfile from './pages/PublicProfile';
 import MatchMode from './pages/MatchMode';
+import Toss from './pages/Toss';
 function Layout({ children }) {
   return (
     <>
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="/match/:matchId/play" element={<MatchMode />} />
           <Route path="/history" element={<Layout><History /></Layout>} />
           <Route path="/profile" element={<Layout><Profile /></Layout>} />
+          <Route path="/match/:matchId/toss" element={<Toss />} />
           <Route path="/rankings" element={<Layout><Rankings /></Layout>} />
           <Route path="/players" element={<Layout><Players /></Layout>} />
           <Route path="/player/:aftId" element={<Layout><PlayerProfile /></Layout>} />

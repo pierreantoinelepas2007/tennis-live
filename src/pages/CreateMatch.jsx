@@ -88,7 +88,7 @@ export default function CreateMatch() {
         matchType: form.matchType,
       });
 
-      navigate(`/match/${matchId}`);
+      navigate(`/match/${matchId}/toss`);
     } catch (e) {
       console.error(e);
       alert('Erreur lors de la création du match.');
