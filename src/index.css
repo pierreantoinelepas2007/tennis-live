@@ -1,45 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
   --green: #1D9E75;
   --green-dark: #0F6E56;
-  --green-light: #E1F5EE;
-  --red: #ff4757;
-  --text: #111;
-  --muted: #888;
-  --border: #eee;
-  --bg: #f7f7f5;
+  --green-light: #E8F5F0;
+  --red: #E8192C;
+  --orange: #E87B00;
+  --blue: #2563EB;
+  --text: #1a1a1a;
+  --text2: #666;
+  --text3: #999;
+  --border: #E8E8E8;
+  --bg: #F4F4F4;
   --card: #fff;
-  --radius: 12px;
+  --radius: 6px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
-
-
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
-  /* Prevent zoom on input focus on iOS */
-  -webkit-text-size-adjust: 100%;
+  font-size: 14px;
 }
 
-a { color: inherit; }
-button { font-family: inherit; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
 input, select, textarea { font-family: inherit; }
-main { min-height: calc(100vh - 60px); }
-
-/* Mobile tap highlight */
+main { min-height: calc(100vh - 52px); }
 button, a { -webkit-tap-highlight-color: transparent; }
 
-/* Better touch targets on mobile */
 @media (max-width: 600px) {
-  button { min-height: 44px; }
-  input, select { min-height: 44px; font-size: 16px !important; /* prevent iOS zoom */ }
+  input, select { font-size: 16px !important; }
+  main { padding-bottom: 64px; }
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
