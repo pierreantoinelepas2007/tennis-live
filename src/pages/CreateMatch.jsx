@@ -6,8 +6,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { createMatch } from '../utils/tennisLogic';
 import styles from './CreateMatch.module.css';
 
-const SURFACES = ['Terre battue', 'Dur', 'Gazon', 'Moquette', 'Synthétique'];
-const BACKEND = 'http://localhost:4000';
+const SURFACES = ['Terre battue', 'Dur', 'Gazon', 'Moquette', 'Synthetique'];
+const BACKEND = 'https://tennis-live-backend-1.onrender.com';
 
 export default function CreateMatch() {
   const { user, profile } = useAuth();
@@ -33,7 +33,7 @@ export default function CreateMatch() {
     setSearching(true);
     setSearchResults([]);
     try {
-      const res = await fetch(`${BACKEND}/api/search-players?q=${encodeURIComponent(search)}&limit=8`);
+      const res = await fetch(BACKEND + '/api/search-players?q=' + encodeURIComponent(search) + '&limit=8');
       const data = await res.json();
       if (data.success) setSearchResults(data.players);
     } catch (e) {
@@ -60,11 +60,9 @@ export default function CreateMatch() {
         surface: form.surface,
         format: parseInt(form.format),
       });
-
       const matchRef = push(ref(db, 'matches'));
       const matchId = matchRef.key;
-
-      const matchToSave = {
+      await set(matchRef, {
         ...matchData,
         id: matchId,
         ownerUid: user.uid,
@@ -74,12 +72,8 @@ export default function CreateMatch() {
         opponentAftRanking: selectedOpponent?.ranking || null,
         matchType: form.matchType,
         history: [],
-      };
-
-      await set(matchRef, matchToSave);
-
-      // Sauvegarder dans le profil du joueur
-      await set(ref(db, `users/${user.uid}/matches/${matchId}`), {
+      });
+      await set(ref(db, 'users/' + user.uid + '/matches/' + matchId), {
         id: matchId,
         playerB: form.playerB.trim(),
         surface: form.surface,
@@ -87,11 +81,10 @@ export default function CreateMatch() {
         status: 'live',
         matchType: form.matchType,
       });
-
-      navigate(`/match/${matchId}/toss`);
+      navigate('/match/' + matchId + '/toss');
     } catch (e) {
       console.error(e);
-      alert('Erreur lors de la création du match.');
+      alert('Erreur lors de la creation du match.');
     } finally {
       setLoading(false);
     }
@@ -104,46 +97,28 @@ export default function CreateMatch() {
       <div className={styles.card}>
         <h1 className={styles.title}>Nouveau match</h1>
 
-        {/* Type de match */}
         <div className={styles.field}>
           <label className={styles.label}>Type de match</label>
           <div className={styles.typeGrid}>
-            <button
-              className={`${styles.typeBtn} ${form.matchType === 'friendly' ? styles.typeBtnActive : ''}`}
-              onClick={() => update('matchType', 'friendly')}
-            >
-              <span className={styles.typeIcon}>🎾</span>
-              <span className={styles.typeName}>Amical</span>
-              <span className={styles.typeDesc}>Match entre amis</span>
-            </button>
-            <button
-              className={`${styles.typeBtn} ${form.matchType === 'tournament' ? styles.typeBtnActive : ''}`}
-              onClick={() => update('matchType', 'tournament')}
-            >
-              <span className={styles.typeIcon}>🏆</span>
-              <span className={styles.typeName}>Tournoi</span>
-              <span className={styles.typeDesc}>Compétition officielle</span>
-            </button>
-            <button
-              className={`${styles.typeBtn} ${form.matchType === 'interclub' ? styles.typeBtnActive : ''}`}
-              onClick={() => update('matchType', 'interclub')}
-            >
-              <span className={styles.typeIcon}>👥</span>
-              <span className={styles.typeName}>Interclub</span>
-              <span className={styles.typeDesc}>Match par équipe</span>
-            </button>
-            <button
-              className={`${styles.typeBtn} ${form.matchType === 'training' ? styles.typeBtnActive : ''}`}
-              onClick={() => update('matchType', 'training')}
-            >
-              <span className={styles.typeIcon}>💪</span>
-              <span className={styles.typeName}>Entraînement</span>
-              <span className={styles.typeDesc}>Séance de pratique</span>
-            </button>
+            {[
+              {val:'friendly', icon:'🎾', name:'Amical', desc:'Match entre amis'},
+              {val:'tournament', icon:'🏆', name:'Tournoi', desc:'Competition officielle'},
+              {val:'interclub', icon:'👥', name:'Interclub', desc:'Match par equipe'},
+              {val:'training', icon:'💪', name:'Entrainement', desc:'Seance de pratique'},
+            ].map(t => (
+              <button
+                key={t.val}
+                className={`${styles.typeBtn} ${form.matchType === t.val ? styles.typeBtnActive : ''}`}
+                onClick={() => update('matchType', t.val)}
+              >
+                <span className={styles.typeIcon}>{t.icon}</span>
+                <span className={styles.typeName}>{t.name}</span>
+                <span className={styles.typeDesc}>{t.desc}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Joueur A */}
         <div className={styles.field}>
           <label className={styles.label}>Toi</label>
           <div className={styles.playerARow}>
@@ -154,7 +129,6 @@ export default function CreateMatch() {
           </div>
         </div>
 
-        {/* Recherche adversaire */}
         <div className={styles.field}>
           <label className={styles.label}>Adversaire</label>
           <div className={styles.searchRow}>
@@ -171,7 +145,7 @@ export default function CreateMatch() {
               autoFocus
             />
             <button className={styles.searchBtn} onClick={searchOpponent} disabled={searching || search.length < 2}>
-              {searching ? '⟳' : '🔍'}
+              {searching ? '...' : '🔍'}
             </button>
           </div>
 
@@ -181,7 +155,7 @@ export default function CreateMatch() {
                 <div key={player.aft_id} className={styles.searchResult} onClick={() => selectOpponent(player)}>
                   <div>
                     <div className={styles.resultName}>{player.name}</div>
-                    <div className={styles.resultMeta}>{player.victories}V – {player.defeats}D</div>
+                    <div className={styles.resultMeta}>{player.victories}V - {player.defeats}D</div>
                   </div>
                   <span className={styles.resultRank}>{player.ranking}</span>
                 </div>
@@ -216,10 +190,11 @@ export default function CreateMatch() {
         </div>
 
         <div style={{position:'sticky',bottom:'0',background:'#fff',padding:'12px 0 8px',marginTop:'1rem'}}>
-  <button className={styles.startBtn} onClick={handleStart} disabled={loading || !form.playerB.trim()}>
-    {loading ? 'Création...' : '🎾 Démarrer le match'}
-  </button>
-</div>
+          <button className={styles.startBtn} onClick={handleStart} disabled={loading || !form.playerB.trim()}>
+            {loading ? 'Creation...' : '🎾 Demarrer le match'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
