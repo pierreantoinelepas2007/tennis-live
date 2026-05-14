@@ -215,10 +215,11 @@ export default function CreateMatch() {
           </div>
         </div>
 
-        <button className={styles.startBtn} onClick={handleStart} disabled={loading || !form.playerB.trim()}>
-          {loading ? 'Création...' : '🎾 Démarrer le match'}
-        </button>
-      </div>
+        <div style={{position:'sticky',bottom:'0',background:'#fff',padding:'12px 0 8px',marginTop:'1rem'}}>
+  <button className={styles.startBtn} onClick={handleStart} disabled={loading || !form.playerB.trim()}>
+    {loading ? 'Création...' : '🎾 Démarrer le match'}
+  </button>
+</div>
     </div>
   );
 }

@@ -104,11 +104,11 @@ export default function History() {
           placeholder="Rechercher un adversaire..."
         />
         <button
-          className={`${styles.filterToggle} ${showFilters ? styles.filterToggleActive : ''}`}
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          ⚙️ {hasFilters ? '•' : ''}
-        </button>
+  className={`${styles.filterToggle} ${showFilters ? styles.filterToggleActive : ''}`}
+  onClick={() => setShowFilters(!showFilters)}
+>
+  {showFilters ? 'Fermer' : 'Filtres'}{hasFilters ? ' •' : ''}
+</button>
       </div>
 
       {showFilters && (
