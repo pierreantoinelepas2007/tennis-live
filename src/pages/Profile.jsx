@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { ref, onValue } from 'firebase/database';
+import { db } from '../firebase';
 import { storage } from '../firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useAuth } from '../contexts/AuthContext';
+import { getEarnedBadges } from '../utils/badges';
 import styles from './Profile.module.css';
 
 const BACKEND = 'https://tennis-live-backend-1.onrender.com';
@@ -17,10 +20,21 @@ export default function Profile() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [badges, setBadges] = useState([]);
 
   useEffect(() => {
     if (profile) setName(profile.name || '');
   }, [profile]);
+
+  useEffect(() => {
+    if (!user) return;
+    onValue(ref(db, 'matches'), snap => {
+      if (!snap.exists()) return;
+      const all = Object.values(snap.val());
+      const mine = all.filter(m => m.ownerUid === user.uid);
+      setBadges(getEarnedBadges(mine));
+    });
+  }, [user]);
 
   useEffect(() => {
     if (!user) navigate('/login');
@@ -120,7 +134,6 @@ export default function Profile() {
 
       <div className={styles.profileCard}>
         <div className={styles.avatarSection}>
-
           <div
             className={styles.avatar}
             style={{position:'relative',cursor:'pointer'}}
@@ -133,13 +146,7 @@ export default function Profile() {
             <div style={{position:'absolute',bottom:0,right:0,background:'#1D9E75',borderRadius:'50%',width:'22px',height:'22px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',border:'2px solid #fff'}}>
               📷
             </div>
-            <input
-              id="photoInput"
-              type="file"
-              accept="image/*"
-              style={{display:'none'}}
-              onChange={uploadPhoto}
-            />
+            <input id="photoInput" type="file" accept="image/*" style={{display:'none'}} onChange={uploadPhoto} />
           </div>
 
           <div style={{flex:1}}>
@@ -186,6 +193,23 @@ export default function Profile() {
           </div>
         )}
       </div>
+
+      {/* Badges */}
+      {badges.length > 0 && (
+        <div style={{background:'#fff',border:'1px solid #E8E8E8',borderRadius:'8px',padding:'1rem'}}>
+          <div style={{fontSize:'12px',fontWeight:'700',color:'#999',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'10px'}}>
+            Badges
+          </div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:'8px'}}>
+            {badges.map(b => (
+              <div key={b.id} title={b.desc} style={{display:'flex',alignItems:'center',gap:'6px',background:'#f5fdf9',border:'1px solid #d0ede2',borderRadius:'20px',padding:'5px 12px'}}>
+                <span style={{fontSize:'16px'}}>{b.icon}</span>
+                <span style={{fontSize:'13px',fontWeight:'500',color:'#0F6E56'}}>{b.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <button className={styles.shareProfileBtn} onClick={shareProfile}>
         {copied ? 'Lien copie !' : 'Partager mon profil'}
