@@ -1,201 +1,157 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ref, onValue } from 'firebase/database';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { getScore, getSetsWon } from '../utils/tennisLogic';
-import styles from './Feed.module.css';
+import styles from './Club.module.css';
 
-export default function Feed() {
-  const { user, profile } = useAuth();
+export default function Club() {
+  const { user, profile, updateProfile } = useAuth();
   const navigate = useNavigate();
-  const [liveMatches, setLiveMatches] = useState([]);
-  const [favorites, setFavorites] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [newMatchAlert, setNewMatchAlert] = useState(null);
-  const prevMatchIds = useRef(new Set());
+  const [members, setMembers] = useState([]);
+  const [recentMatches, setRecentMatches] = useState([]);
+  const [clubName, setClubName] = useState('');
 
   useEffect(() => {
-    if (!user) return;
-    const favRef = ref(db, 'users/' + user.uid + '/favorites');
-    return onValue(favRef, snap => {
-      setFavorites(snap.exists() ? Object.values(snap.val()) : []);
-    });
-  }, [user]);
-
-  useEffect(() => {
-    if (!user) return;
-    const matchesRef = ref(db, 'matches');
-    return onValue(matchesRef, snap => {
-      if (!snap.exists()) { setLiveMatches([]); setLoading(false); return; }
+    if (!profile?.club) return;
+    onValue(ref(db, 'users'), snap => {
+      if (!snap.exists()) return;
       const all = Object.values(snap.val());
-
-      const favUids = favorites.map(f => f.uid).filter(Boolean);
-      const favNames = favorites.map(f => f.name?.toLowerCase()).filter(Boolean);
-
-      const filtered = all.filter(m => {
-        if (m.ownerUid === user.uid) return true;
-        if (favUids.includes(m.ownerUid)) return true;
-        if (favNames.some(n =>
-          m.playerA?.toLowerCase().includes(n) ||
-          m.playerB?.toLowerCase().includes(n)
-        )) return true;
-        return false;
-      });
-
-      const live = filtered.filter(m => {
-        if (m.status === 'live') return true;
-        if (m.status === 'finished' && Date.now() - (m.updatedAt || 0) < 3600000) return true;
-        return false;
-      });
-
-      live.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-
-      // Notification nouveau match favori
-      live.forEach(m => {
-        if (m.status === 'live' && !prevMatchIds.current.has(m.id)) {
-          const isFavMatch = favNames.some(n =>
-            m.playerA?.toLowerCase().includes(n) ||
-            m.playerB?.toLowerCase().includes(n)
-          );
-          if (isFavMatch && prevMatchIds.current.size > 0) {
-            setNewMatchAlert(m.playerA + ' vs ' + m.playerB + ' vient de commencer !');
-            if (Notification.permission === 'granted') {
-              new Notification('🎾 Match en cours !', { body: m.playerA + ' vs ' + m.playerB });
-            }
-            setTimeout(() => setNewMatchAlert(null), 5000);
-          }
-          prevMatchIds.current.add(m.id);
-        }
-      });
-
-      setLiveMatches(live);
-      setLoading(false);
+      setMembers(all.filter(u => u.club === profile.club && u.uid !== user?.uid));
     });
-  }, [favorites, user]);
+    onValue(ref(db, 'matches'), snap => {
+      if (!snap.exists()) return;
+      const all = Object.values(snap.val());
+      setRecentMatches(
+        all.filter(m => m.status === 'finished')
+           .sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0))
+           .slice(0, 15)
+      );
+    });
+  }, [profile?.club]);
 
-  function requestNotifications() {
-    if ('Notification' in window) {
-      Notification.requestPermission().then(p => {
-        if (p === 'granted') alert('Notifications activees !');
-      });
-    }
+  async function joinClub() {
+    if (!clubName.trim()) return;
+    await updateProfile({ club: clubName.trim().toUpperCase() });
   }
 
-  const favNames = favorites.map(f => f.name?.toLowerCase()).filter(Boolean);
-  const myMatches = liveMatches.filter(m => m.ownerUid === user?.uid);
-  const favMatches = liveMatches.filter(m =>
-    m.ownerUid !== user?.uid &&
-    favNames.some(n => m.playerA?.toLowerCase().includes(n) || m.playerB?.toLowerCase().includes(n))
-  );
-
-  if (!user) {
-    return (
-      <div className={styles.hero}>
-        <div className={styles.heroContent}>
-          <div className={styles.heroIcon}>🎾</div>
-          <h1 className={styles.heroTitle}>TennisLive</h1>
-          <p className={styles.heroSub}>Score en direct · Suis tes joueurs favoris · Encouragements live</p>
-          <button className={styles.heroBtn} onClick={() => navigate('/login')}>Commencer gratuitement →</button>
-          <div className={styles.features}>
-            <div className={styles.feature}><span>📡</span><span>Score live partageable</span></div>
-            <div className={styles.feature}><span>💬</span><span>Messages d'encouragement</span></div>
-            <div className={styles.feature}><span>📊</span><span>Stats et historique</span></div>
-            <div className={styles.feature}><span>🏆</span><span>Classement AFT integre</span></div>
-          </div>
-        </div>
-      </div>
-    );
+  async function leaveClub() {
+    if (!confirm('Quitter ' + profile.club + ' ?')) return;
+    await updateProfile({ club: null });
   }
+
+  const initials = name => (name || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 
   return (
     <div className={styles.page}>
-      {newMatchAlert && <div className={styles.alert}>⭐ {newMatchAlert}</div>}
+      <h1 className={styles.title}>Mon Club</h1>
 
-      <div className={styles.topBar}>
-        <h1 className={styles.title}>En direct</h1>
-        <button className={styles.notifBtn} onClick={requestNotifications} title="Activer les notifications">🔔</button>
-      </div>
-
-      {loading && <div className={styles.loading}>Chargement...</div>}
-
-      {favMatches.length > 0 && (
-        <div className={styles.section}>
-          <div className={styles.sectionLabel}>⭐ Tes favoris jouent</div>
-          {favMatches.map(m => <MatchCard key={m.id} match={m} favorites={favorites} onClick={() => navigate('/watch/' + m.id)} highlight />)}
-        </div>
-      )}
-
-      {myMatches.length > 0 && (
-        <div className={styles.section}>
-          <div className={styles.sectionLabel}>🎾 Mes matchs</div>
-          {myMatches.map(m => <MatchCard key={m.id} match={m} favorites={favorites} onClick={() => navigate('/match/' + m.id)} />)}
-        </div>
-      )}
-
-      {!loading && liveMatches.length === 0 && (
-        <div className={styles.empty}>
-          <div className={styles.emptyIcon}>🎾</div>
-          <p>Aucun match en cours.</p>
-          <p style={{fontSize:'13px',color:'#bbb',marginTop:'4px'}}>Suis des joueurs pour voir leurs matchs ici.</p>
-          <button className={styles.newBtn} onClick={() => navigate('/match/new')}>Demarrer un match</button>
-        </div>
-      )}
-
-      <button className={styles.bigBtn} onClick={() => navigate('/match/new')}>
-        + Nouveau match
-      </button>
-    </div>
-  );
-}
-
-function MatchCard({ match, onClick, highlight, favorites }) {
-  const [liveMatch, setLiveMatch] = useState(match);
-
-  useEffect(() => {
-    const unsub = onValue(ref(db, 'matches/' + match.id), snap => {
-      if (snap.exists()) setLiveMatch(snap.val());
-    });
-    return unsub;
-  }, [match.id]);
-
-  const score = getScore(liveMatch);
-  const isLive = liveMatch.status === 'live';
-  const elapsed = Math.round((Date.now() - liveMatch.startedAt) / 60000);
-  const matchTypeIcon = liveMatch.matchType === 'tournament' ? '🏆' :
-                        liveMatch.matchType === 'interclub' ? '👥' :
-                        liveMatch.matchType === 'training' ? '💪' : '🎾';
-
-  return (
-    <div className={`${styles.matchCard} ${highlight ? styles.matchCardHighlight : ''}`} onClick={onClick}>
-      <div className={styles.cardHeader}>
-        <span className={isLive ? styles.livePill : styles.finishedPill}>
-          {isLive ? '● Live' : '✓ Termine'}
-        </span>
-        <span className={styles.cardMeta}>
-          {matchTypeIcon} {liveMatch.surface} · {isLive ? elapsed + ' min' : (liveMatch.sets || []).map(s => s.a + '-' + s.b).join(' ')}
-        </span>
-      </div>
-
-      {['a', 'b'].map(p => {
-        const name = p === 'a' ? score.playerA : score.playerB;
-        const pts = p === 'a' ? score.labelA : score.labelB;
-        const isServing = score.serving === p && isLive;
-        const isWinner = !isLive && liveMatch.winner === p;
-        return (
-          <div key={p} className={`${styles.playerLine} ${isWinner ? styles.winnerLine : ''}`}>
-            <span className={styles.serveDot}>{isServing ? '●' : ''}</span>
-            <span className={`${styles.playerLineName} ${isWinner ? styles.winnerLineName : ''}`}>{name}</span>
-            <div className={styles.setsRow}>
-              {(liveMatch.sets || []).map((s, i) => (
-                <span key={i} className={s[p] > s[p === 'a' ? 'b' : 'a'] ? styles.setW : styles.setL}>{s[p]}</span>
-              ))}
-              <span className={styles.currentGame}>{score.games[p]}</span>
-            </div>
-            {isLive && <span className={`${styles.ptScore} ${pts === 'Avantage' ? styles.adv : ''}`}>{pts}</span>}
+      {!profile?.club ? (
+        <div className={styles.noClub}>
+          <div className={styles.noClubIcon}>🎾</div>
+          <h2>Rejoins ton club</h2>
+          <p>Entre le nom exact de ton club AFT</p>
+          <p style={{fontSize:'12px',color:'#bbb',marginBottom:'1.5rem'}}>
+            Ex: VAUTOUR, WOLUWE, UCCLE...
+          </p>
+          <div className={styles.searchRow}>
+            <input
+              className={styles.searchInput}
+              value={clubName}
+              onChange={e => setClubName(e.target.value.toUpperCase())}
+              onKeyDown={e => e.key === 'Enter' && joinClub()}
+              placeholder="NOM DU CLUB"
+              autoFocus
+            />
+            <button
+              className={styles.searchBtn}
+              onClick={joinClub}
+              disabled={!clubName.trim()}
+            >
+              Rejoindre
+            </button>
           </div>
-        );
-      })}
+        </div>
+      ) : (
+        <>
+          <div className={styles.clubHeader}>
+            <div className={styles.clubIconBig}>🎾</div>
+            <div style={{flex:1}}>
+              <h2 className={styles.clubTitle}>{profile.club}</h2>
+              <p className={styles.clubSub}>{members.length + 1} membre{members.length > 0 ? 's' : ''} sur TennisLive</p>
+            </div>
+            <button className={styles.leaveBtn} onClick={leaveClub}>Quitter</button>
+          </div>
+
+          {/* Membres */}
+          <div className={styles.section}>
+            <div className={styles.sectionTitle}>Membres</div>
+            <div className={styles.membersList}>
+              <div className={styles.memberRow} onClick={() => navigate('/profile')}>
+                <div className={styles.memberAvatar} style={{background:'#1D9E75',color:'#fff'}}>
+                  {profile.photoURL
+                    ? <img src={profile.photoURL} alt="" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} />
+                    : initials(profile.name)
+                  }
+                </div>
+                <div className={styles.memberInfo}>
+                  <div className={styles.memberName}>{profile.name} <span className={styles.meBadge}>moi</span></div>
+                  <div className={styles.memberMeta}>{profile.aftRanking || '—'}</div>
+                </div>
+              </div>
+              {members.map(m => (
+                <div key={m.uid} className={styles.memberRow} onClick={() => navigate('/u/' + m.uid)}>
+                  <div className={styles.memberAvatar}>
+                    {m.photoURL
+                      ? <img src={m.photoURL} alt="" style={{width:'100%',height:'100%',objectFit:'cover',borderRadius:'50%'}} />
+                      : initials(m.name)
+                    }
+                  </div>
+                  <div className={styles.memberInfo}>
+                    <div className={styles.memberName}>{m.name}</div>
+                    <div className={styles.memberMeta}>{m.aftRanking || '—'}</div>
+                  </div>
+                  {m.aftNumber && (
+                    <button
+                      className={styles.viewBtn}
+                      onClick={e => { e.stopPropagation(); navigate('/player/' + m.aftNumber); }}
+                    >
+                      Profil AFT
+                    </button>
+                  )}
+                </div>
+              ))}
+              {members.length === 0 && (
+                <div style={{fontSize:'13px',color:'#bbb',padding:'12px',textAlign:'center'}}>
+                  Pas encore d'autres membres de {profile.club} sur TennisLive.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Matchs récents */}
+          {recentMatches.length > 0 && (
+            <div className={styles.section}>
+              <div className={styles.sectionTitle}>Matchs récents</div>
+              {recentMatches.map(m => (
+                <div key={m.id} className={styles.matchRow} onClick={() => navigate('/watch/' + m.id)}>
+                  <div className={styles.matchPlayers}>
+                    <span className={m.winner === 'a' ? styles.matchWinner : ''}>{m.playerA}</span>
+                    <span className={styles.matchVs}>vs</span>
+                    <span className={m.winner === 'b' ? styles.matchWinner : ''}>{m.playerB}</span>
+                  </div>
+                  <div className={styles.matchScore}>
+                    {(m.sets || []).map(s => s.a + '-' + s.b).join(' ')}
+                  </div>
+                  <div className={styles.matchDate}>
+                    {new Date(m.startedAt).toLocaleDateString('fr-BE', {day:'2-digit',month:'2-digit'})}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
