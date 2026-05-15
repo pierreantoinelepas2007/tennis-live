@@ -155,11 +155,37 @@ function MatchCard({ match, onClick, highlight }) {
   const [liveMatch, setLiveMatch] = useState(match);
 
   useEffect(() => {
-    const unsub = onValue(ref(db, `matches/${match.id}`), snap => {
-      if (snap.exists()) setLiveMatch(snap.val());
+  if (!user) return;
+  const matchesRef = ref(db, 'matches');
+  return onValue(matchesRef, snap => {
+    if (!snap.exists()) { setLiveMatches([]); setLoading(false); return; }
+    const all = Object.values(snap.val());
+
+    // Récupérer les UIDs des favoris
+    const favUids = favorites
+      .map(f => f.uid)
+      .filter(Boolean);
+
+    // Garder seulement :
+    // 1. Mes propres matchs
+    // 2. Les matchs des gens que je suis
+    const filtered = all.filter(m => {
+      if (m.ownerUid === user.uid) return true;
+      if (favUids.includes(m.ownerUid)) return true;
+      return false;
     });
-    return unsub;
-  }, [match.id]);
+
+    const live = filtered.filter(m => {
+      if (m.status === 'live') return true;
+      if (m.status === 'finished' && Date.now() - (m.updatedAt || 0) < 3600000) return true;
+      return false;
+    });
+
+    live.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    setLiveMatches(live);
+    setLoading(false);
+  });
+}, [favorites, user]);
 
   const score = getScore(liveMatch);
   const isLive = liveMatch.status === 'live';
