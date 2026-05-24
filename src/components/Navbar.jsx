@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Notifications from './Notifications';
 import styles from './Navbar.module.css';
 
 export default function Navbar() {
@@ -17,13 +18,14 @@ export default function Navbar() {
         <div className={styles.links}>
           <NavLink to="/" end className={({ isActive }) => isActive ? styles.linkActive : styles.link}>En direct</NavLink>
           <NavLink to="/players" className={({ isActive }) => isActive ? styles.linkActive : styles.link}>Joueurs</NavLink>
-
+          <NavLink to="/club" className={({ isActive }) => isActive ? styles.linkActive : styles.link}>Club</NavLink>
           <NavLink to="/history" className={({ isActive }) => isActive ? styles.linkActive : styles.link}>Historique</NavLink>
           <NavLink to="/rankings" className={({ isActive }) => isActive ? styles.linkActive : styles.link}>Classement</NavLink>
         </div>
         <div className={styles.right}>
           {user ? (
             <div className={styles.userMenu}>
+              <Notifications />
               <NavLink to="/profile">
                 <img
                   src={profile?.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(profile?.name || 'U') + '&background=1D9E75&color=fff'}

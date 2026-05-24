@@ -1,126 +1,238 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { ref, onValue } from 'firebase/database';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ref, onValue, set, push } from 'firebase/database';
 import { db } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
 import { getScore, getSetsWon } from '../utils/tennisLogic';
 import LiveChat from '../components/LiveChat';
-import styles from './WatchMatch.module.css';
 
 export default function WatchMatch() {
   const { matchId } = useParams();
+  const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const [match, setMatch] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [spectatorName, setSpectatorName] = useState('');
-  const [nameSet, setNameSet] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
+  const [isApprovedScorer, setIsApprovedScorer] = useState(false);
+  const [pendingResult, setPendingResult] = useState(null);
 
   useEffect(() => {
-    const matchRef = ref(db, `matches/${matchId}`);
-    const unsub = onValue(matchRef, snap => {
-      setMatch(snap.exists() ? snap.val() : null);
+    const unsub = onValue(ref(db, 'matches/' + matchId), snap => {
+      if (snap.exists()) setMatch(snap.val());
       setLoading(false);
     });
     return unsub;
   }, [matchId]);
 
+  useEffect(() => {
+    if (!user || !matchId) return;
+    // Vérifier si on est approuvé comme marqueur
+    onValue(ref(db, 'matches/' + matchId + '/scorer'), snap => {
+      if (snap.exists()) {
+        const scorer = snap.val();
+        if (scorer.uid === user.uid && scorer.approved) {
+          setIsApprovedScorer(true);
+        }
+      }
+    });
+    // Vérifier si demande déjà envoyée
+    onValue(ref(db, 'matches/' + matchId + '/scorerRequest'), snap => {
+      if (snap.exists() && snap.val().uid === user.uid) {
+        setRequestSent(true);
+      }
+    });
+  }, [user, matchId]);
+
+  async function requestScoring() {
+    if (!user) { navigate('/login'); return; }
+    await set(ref(db, 'matches/' + matchId + '/scorerRequest'), {
+      uid: user.uid,
+      name: profile?.name || user.displayName,
+      requestedAt: Date.now(),
+      approved: false,
+    });
+    // Notifier le joueur
+    await push(ref(db, 'users/' + match.ownerUid + '/notifications'), {
+      type: 'scorer_request',
+      matchId,
+      from: profile?.name || user.displayName,
+      fromUid: user.uid,
+      message: (profile?.name || user.displayName) + ' veut noter ton match',
+      createdAt: Date.now(),
+      read: false,
+    });
+    setRequestSent(true);
+  }
+
+  async function confirmResult() {
+    await set(ref(db, 'matches/' + matchId + '/confirmed'), true);
+    alert('Match confirmé ! Il apparaît maintenant sur ton profil.');
+  }
+
   if (loading) return (
-    <div style={{textAlign:'center',padding:'4rem',color:'#999'}}>
-      <div style={{fontSize:'40px',marginBottom:'10px'}}>🎾</div>
-      <p>Connexion au match…</p>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#1a5c40',color:'#fff',fontSize:'18px'}}>
+      Chargement...
     </div>
   );
 
   if (!match) return (
-    <div style={{textAlign:'center',padding:'4rem',color:'#999'}}>
-      <div style={{fontSize:'40px',marginBottom:'10px'}}>🎾</div>
-      <h2>Match introuvable</h2>
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',color:'#888'}}>
+      Match introuvable.
     </div>
   );
 
   const score = getScore(match);
+  const setsWon = getSetsWon(match);
+  const isOwner = user?.uid === match.ownerUid;
+  const isLive = match.status === 'live';
   const isFinished = match.status === 'finished';
-  const firstName = score.playerA ? score.playerA.split(' ')[0] : 'le joueur';
-
-  if (!nameSet) {
-    return (
-      <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f0fdf8',padding:'1.5rem'}}>
-        <div style={{background:'#fff',borderRadius:'20px',padding:'2rem',maxWidth:'340px',width:'100%',textAlign:'center',boxShadow:'0 4px 30px rgba(0,0,0,0.08)'}}>
-          <div style={{fontSize:'36px',marginBottom:'0.5rem'}}>👋</div>
-          <h2 style={{fontSize:'18px',fontWeight:'700',marginBottom:'8px'}}>Tu suis {firstName} en direct !</h2>
-          <p style={{fontSize:'14px',color:'#777',marginBottom:'1.5rem',lineHeight:'1.5'}}>
-            Entre ton prénom pour qu'il sache que tu le soutiens 💪
-          </p>
-          <input
-            style={{width:'100%',padding:'11px 14px',border:'1.5px solid #ddd',borderRadius:'10px',fontSize:'16px',fontFamily:'inherit',outline:'none',marginBottom:'12px',boxSizing:'border-box'}}
-            value={spectatorName}
-            onChange={e => setSpectatorName(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && spectatorName.trim() && setNameSet(true)}
-            placeholder="Ton prénom"
-            autoFocus
-          />
-          <button
-            style={{width:'100%',padding:'12px',background:'#1D9E75',color:'#fff',border:'none',borderRadius:'10px',fontSize:'15px',fontWeight:'600',cursor:'pointer',fontFamily:'inherit',marginBottom:'8px',opacity:spectatorName.trim()?1:0.5}}
-            onClick={() => spectatorName.trim() && setNameSet(true)}
-          >
-            Voir le score et encourager →
-          </button>
-          <button
-            style={{background:'none',border:'none',color:'#bbb',fontSize:'13px',cursor:'pointer',fontFamily:'inherit'}}
-            onClick={() => { setSpectatorName('Un supporter'); setNameSet(true); }}
-          >
-            Continuer sans prénom
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div style={{maxWidth:'480px',margin:'0 auto',padding:'1rem 1rem 3rem',display:'flex',flexDirection:'column',gap:'1rem'}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0.5rem 0'}}>
-        <div style={{fontSize:'16px',fontWeight:'700',color:'#1D9E75'}}>🎾 TennisLive</div>
-        {isFinished
-          ? <span style={{fontSize:'13px',color:'#1D9E75',fontWeight:'600'}}>✓ Match terminé</span>
-          : <span style={{fontSize:'13px',color:'#ff4757',fontWeight:'600'}}>● Live</span>
-        }
+    <div style={{maxWidth:'500px',margin:'0 auto',padding:'1rem',minHeight:'100vh',background:'#f4f4f4'}}>
+
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'1rem'}}>
+        <button onClick={() => navigate('/')} style={{background:'none',border:'none',fontSize:'20px',cursor:'pointer'}}>←</button>
+        <div>
+          <div style={{fontSize:'13px',color:'#888'}}>{match.surface} · {match.matchType === 'friendly' ? 'Amical' : match.matchType === 'tournament' ? 'Tournoi' : 'Interclub'}</div>
+          <div style={{fontSize:'12px',color:isLive?'#E8192C':'#1D9E75',fontWeight:'700'}}>
+            {isLive ? '● Live' : '✓ Terminé'}
+          </div>
+        </div>
       </div>
 
-      <div style={{background:'#fff',borderRadius:'16px',padding:'1.25rem',border:'1px solid #eee'}}>
-        <div style={{fontSize:'12px',color:'#aaa',marginBottom:'12px'}}>{match.surface}</div>
+      {/* Score */}
+      <div style={{background:'#1a5c40',borderRadius:'12px',padding:'1.5rem',color:'#fff',marginBottom:'1rem'}}>
         {['a','b'].map(p => {
           const name = p === 'a' ? score.playerA : score.playerB;
-          const pointLabel = p === 'a' ? score.labelA : score.labelB;
-          const isServing = score.serving === p && !isFinished;
+          const pts = p === 'a' ? score.labelA : score.labelB;
+          const isServing = score.serving === p && isLive;
           const isWinner = isFinished && match.winner === p;
           return (
-            <div key={p} style={{display:'flex',alignItems:'center',gap:'8px',padding:'10px 0',borderBottom:p==='a'?'1px solid #f5f5f5':'none',background:isWinner?'#f5fdf9':'transparent'}}>
-              <div style={{width:'20px',textAlign:'center',fontSize:'10px',color:'#f5c518'}}>{isServing?'●':''}{isWinner?'🏆':''}</div>
-              <span style={{flex:1,fontSize:'16px',fontWeight:isWinner?'700':'500',color:isWinner?'#0F6E56':'#111'}}>{name}</span>
-              <div style={{display:'flex',gap:'4px'}}>
-                {(match.sets||[]).map((s,i) => {
-                  const mine = s[p]; const opp = s[p==='a'?'b':'a'];
-                  return <span key={i} style={{width:'26px',height:'26px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'13px',fontWeight:'600',borderRadius:'6px',background:mine>opp?'#E1F5EE':'transparent',color:mine>opp?'#0F6E56':'#ccc'}}>{mine}</span>;
-                })}
+            <div key={p} style={{display:'flex',alignItems:'center',gap:'10px',padding:'8px 0',borderBottom:p==='a'?'1px solid rgba(255,255,255,0.15)':'none'}}>
+              <span style={{fontSize:'10px',color:'#f5c518',opacity:isServing?1:0}}>●</span>
+              <span style={{flex:1,fontSize:'18px',fontWeight:isWinner?'800':'500'}}>{name}</span>
+              <div style={{display:'flex',gap:'4px',alignItems:'center'}}>
+                {(match.sets||[]).map((s,i) => (
+                  <span key={i} style={{width:'24px',height:'24px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'14px',fontWeight:'700',borderRadius:'4px',background:s[p]>s[p==='a'?'b':'a']?'rgba(255,255,255,0.3)':'transparent'}}>
+                    {s[p]}
+                  </span>
+                ))}
+                <span style={{width:'32px',height:'32px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'18px',fontWeight:'700',background:'rgba(255,255,255,0.2)',borderRadius:'6px'}}>
+                  {score.games[p]}
+                </span>
+                {isLive && (
+                  <span style={{width:'44px',height:'28px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'14px',fontWeight:'700',background:pts==='Avantage'?'#f5c518':'rgba(255,255,255,0.15)',borderRadius:'4px',color:pts==='Avantage'?'#333':'#fff'}}>
+                    {pts}
+                  </span>
+                )}
               </div>
-              <div style={{width:'34px',height:'34px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'18px',fontWeight:'700',borderRadius:'8px',border:`1px solid ${isServing?'#1D9E75':'#eee'}`,color:isServing?'#0F6E56':'#333',background:isServing?'#f0fdf9':'#fff'}}>{score.games[p]}</div>
-              {!isFinished && <div style={{width:'70px',height:'36px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'17px',fontWeight:'700',borderRadius:'8px',border:`1.5px solid ${pointLabel==='Avantage'?'#f5c518':'#eee'}`,background:pointLabel==='Avantage'?'#FFF8E1':'#fff',color:pointLabel==='Avantage'?'#8a6d00':'#222'}}>{pointLabel}</div>}
             </div>
           );
         })}
-        {isFinished && <div style={{textAlign:'center',fontSize:'13px',color:'#888',marginTop:'12px',paddingTop:'10px',borderTop:'1px solid #f5f5f5'}}>Score final : {(match.sets||[]).map(s=>`${s.a}-${s.b}`).join(', ')}</div>}
+
+        <div style={{marginTop:'12px',display:'flex',justifyContent:'center',gap:'2rem',fontSize:'12px',opacity:0.7}}>
+          <span>Sets : {setsWon.a}–{setsWon.b}</span>
+          <span>Jeux : {match.games?.a||0}–{match.games?.b||0}</span>
+        </div>
       </div>
 
-      {!isFinished && (
-        <>
-          <div style={{background:'#E1F5EE',borderRadius:'12px',padding:'12px 16px',fontSize:'14px',color:'#0F6E56',textAlign:'center'}}>
-            💬 Envoie un message à {firstName} — il le verra sur son écran !
+      {/* Confirmation résultat pour le joueur */}
+      {isOwner && isFinished && !match.confirmed && (
+        <div style={{background:'#fff',border:'2px solid #1D9E75',borderRadius:'12px',padding:'1.25rem',marginBottom:'1rem',textAlign:'center'}}>
+          <div style={{fontSize:'16px',fontWeight:'700',marginBottom:'6px'}}>Match terminé !</div>
+          <div style={{fontSize:'14px',color:'#666',marginBottom:'12px'}}>
+            Résultat : {score.playerA} {setsWon.a} – {setsWon.b} {score.playerB}
           </div>
-          <LiveChat matchId={matchId} playerName={score.playerA} spectatorName={spectatorName} isPlayer={false} />
-        </>
+          <button
+            onClick={confirmResult}
+            style={{width:'100%',padding:'12px',background:'#1D9E75',color:'#fff',border:'none',borderRadius:'8px',fontSize:'15px',fontWeight:'600',cursor:'pointer',fontFamily:'inherit'}}
+          >
+            ✓ Confirmer ce résultat
+          </button>
+        </div>
       )}
 
-      <div style={{textAlign:'center',fontSize:'12px',color:'#ccc'}}>
-        TennisLive · <a href="/" style={{color:'#1D9E75',textDecoration:'none'}}>Créer ton compte</a>
+      {/* Demande de notation pour spectateur */}
+      {!isOwner && isLive && user && !isApprovedScorer && (
+        <div style={{background:'#fff',border:'1px solid #E8E8E8',borderRadius:'12px',padding:'1.25rem',marginBottom:'1rem',textAlign:'center'}}>
+          <div style={{fontSize:'15px',fontWeight:'600',marginBottom:'6px'}}>Tu veux noter ce match ?</div>
+          <div style={{fontSize:'13px',color:'#888',marginBottom:'12px'}}>
+            Une demande sera envoyée au joueur. Il devra accepter.
+          </div>
+          {requestSent ? (
+            <div style={{padding:'10px',background:'#E8F5F0',borderRadius:'8px',color:'#0F6E56',fontSize:'14px',fontWeight:'500'}}>
+              ⏳ Demande envoyée — en attente d'acceptation
+            </div>
+          ) : (
+            <button
+              onClick={requestScoring}
+              style={{width:'100%',padding:'12px',background:'#1D9E75',color:'#fff',border:'none',borderRadius:'8px',fontSize:'15px',fontWeight:'600',cursor:'pointer',fontFamily:'inherit'}}
+            >
+              📝 Demander à noter ce match
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Mode notation approuvé */}
+      {isApprovedScorer && isLive && (
+        <ScorerMode matchId={matchId} match={match} />
+      )}
+
+      {/* Encouragements */}
+      <LiveChat
+        matchId={matchId}
+        playerName={score.playerA}
+        spectatorName={profile?.name || 'Spectateur'}
+        isPlayer={isOwner}
+      />
+    </div>
+  );
+}
+
+function ScorerMode({ matchId, match }) {
+  const score = getScore(match);
+
+  async function addPoint(player) {
+    const { addPoint: addPt } = await import('../utils/tennisLogic');
+    const updated = addPt(match, player);
+    const { history, ...toSave } = updated;
+    await set(ref(db, 'matches/' + matchId), toSave);
+  }
+
+  async function undoPoint() {
+    const { undoPoint: undoPt } = await import('../utils/tennisLogic');
+    const restored = undoPt(match);
+    const { history, ...toSave } = restored;
+    await set(ref(db, 'matches/' + matchId), toSave);
+  }
+
+  return (
+    <div style={{background:'#1a5c40',borderRadius:'12px',padding:'1rem',marginBottom:'1rem'}}>
+      <div style={{color:'#fff',fontSize:'13px',fontWeight:'600',marginBottom:'10px',textAlign:'center',opacity:0.8}}>
+        Mode marqueur actif
       </div>
+      <div style={{display:'flex',gap:'8px',marginBottom:'8px'}}>
+        <button
+          onClick={() => addPoint('a')}
+          style={{flex:1,padding:'14px',background:'#1D9E75',color:'#fff',border:'none',borderRadius:'10px',fontSize:'16px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit'}}
+        >
+          {score.playerA.split(' ')[0]} ▶
+        </button>
+        <button
+          onClick={() => addPoint('b')}
+          style={{flex:1,padding:'14px',background:'#2563EB',color:'#fff',border:'none',borderRadius:'10px',fontSize:'16px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit'}}
+        >
+          {score.playerB.split(' ')[0]} ▶
+        </button>
+      </div>
+      <button
+        onClick={undoPoint}
+        style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.15)',color:'#fff',border:'none',borderRadius:'8px',fontSize:'14px',cursor:'pointer',fontFamily:'inherit'}}
+      >
+        ↩ Annuler dernier point
+      </button>
     </div>
   );
 }
