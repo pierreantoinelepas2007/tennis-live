@@ -21,8 +21,11 @@ export async function initNotifications(uid) {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') return;
 
+    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    await navigator.serviceWorker.ready;
+
     const msg = getMsg();
-    const token = await getToken(msg, { vapidKey: VAPID_KEY });
+    const token = await getToken(msg, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
     if (token) {
       await set(ref(db, `users/${uid}/fcmToken`), token);
     }
