@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ref, onValue, update, set } from 'firebase/database';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { sendPushToUser } from '../utils/notifications';
 
 export default function Notifications() {
   const { user } = useAuth();
@@ -29,6 +30,11 @@ export default function Notifications() {
     });
     // Marquer notif comme lue
     await update(ref(db, 'users/' + user.uid + '/notifications/' + notif.id), { read: true, accepted: true });
+    await sendPushToUser(
+      notif.fromUid,
+      'Demande de marqueur acceptée',
+      `Vous pouvez maintenant marquer le match.`,
+    );
     setShow(false);
   }
 

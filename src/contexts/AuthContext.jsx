@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { ref, set, get } from 'firebase/database';
 import { auth, googleProvider, db } from '../firebase';
+import { initNotifications } from '../utils/notifications';
 
 const AuthContext = createContext(null);
 
@@ -32,6 +33,7 @@ export function AuthProvider({ children }) {
           await set(ref(db, `users/${firebaseUser.uid}`), newProfile);
           setProfile(newProfile);
         }
+        initNotifications(firebaseUser.uid);
       } else {
         setProfile(null);
       }
