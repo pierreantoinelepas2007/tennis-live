@@ -5,7 +5,7 @@ import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import styles from './Players.module.css';
 
-const BACKEND = 'https://tennis-live-backend-1.onrender.com';
+const CF_BASE = 'https://us-central1-tennis-live-2b8fc.cloudfunctions.net';
 
 export default function Players() {
   const { user } = useAuth();
@@ -35,7 +35,7 @@ export default function Players() {
     setLoading(true);
     setResults([]);
     try {
-      const res = await fetch(`${BACKEND}/api/search-players?q=${encodeURIComponent(search)}&limit=15`);
+      const res = await fetch(`${CF_BASE}/searchPlayers?q=${encodeURIComponent(search)}&limit=15`);
       const data = await res.json();
       if (data.success) setResults(data.players);
     } catch (e) {
