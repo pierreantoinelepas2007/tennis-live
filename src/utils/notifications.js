@@ -45,12 +45,14 @@ export async function initNotifications(uid) {
   }
 }
 
+const NOTIFY_URL = 'https://us-central1-tennis-live-2b8fc.cloudfunctions.net/notify';
+
 export async function sendPushToUser(targetUid, title, body) {
   try {
     const snap = await get(ref(db, `users/${targetUid}/fcmToken`));
     if (!snap.exists()) return;
 
-    await fetch('/api/notify', {
+    await fetch(NOTIFY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: snap.val(), title, body }),
