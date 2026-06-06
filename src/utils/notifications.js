@@ -14,21 +14,35 @@ function getMsg() {
 }
 
 export async function initNotifications(uid) {
-  if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
-  if (Notification.permission === 'denied') return;
+  alert('étape 1 : début initNotifications');
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+    alert('étape 1 STOP : Notification ou serviceWorker non supporté');
+    return;
+  }
+  alert('étape 2 : permission = ' + Notification.permission);
+  if (Notification.permission === 'denied') {
+    alert('étape 2 STOP : permission refusée');
+    return;
+  }
 
   try {
     const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return;
+    if (permission !== 'granted') {
+      alert('étape 3 STOP : permission non accordée (' + permission + ')');
+      return;
+    }
+    alert('étape 3 : permission accordée');
 
     const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
     await navigator.serviceWorker.ready;
+    alert('étape 4 : service worker enregistré');
 
     const msg = getMsg();
     const token = await getToken(msg, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
+    alert('étape 5 : token = ' + (token || '(vide)'));
     console.log('[FCM] token obtenu :', token || '(vide)');
+
     if (token) {
-      alert('[FCM] Token obtenu :\n' + token);
       await set(ref(db, `users/${uid}/fcmToken`), token);
       console.log('[FCM] token sauvegardé dans Firestore pour uid :', uid);
     } else {
@@ -46,6 +60,7 @@ export async function initNotifications(uid) {
       foregroundListenerSet = true;
     }
   } catch (err) {
+    alert('ERREUR : ' + err.message);
     console.error('[FCM] init error:', err);
   }
 }
