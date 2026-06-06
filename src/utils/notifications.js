@@ -28,6 +28,7 @@ export async function initNotifications(uid) {
     const token = await getToken(msg, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
     console.log('[FCM] token obtenu :', token || '(vide)');
     if (token) {
+      alert('[FCM] Token obtenu :\n' + token);
       await set(ref(db, `users/${uid}/fcmToken`), token);
       console.log('[FCM] token sauvegardé dans Firestore pour uid :', uid);
     } else {
