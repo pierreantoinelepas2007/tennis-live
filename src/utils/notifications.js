@@ -26,8 +26,12 @@ export async function initNotifications(uid) {
 
     const msg = getMsg();
     const token = await getToken(msg, { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
+    console.log('[FCM] token obtenu :', token || '(vide)');
     if (token) {
       await set(ref(db, `users/${uid}/fcmToken`), token);
+      console.log('[FCM] token sauvegardé dans Firestore pour uid :', uid);
+    } else {
+      console.warn('[FCM] aucun token — vérifier VAPID_KEY ou les permissions');
     }
 
     if (!foregroundListenerSet) {
@@ -50,13 +54,20 @@ const NOTIFY_URL = 'https://railway-init-production-f1ae.up.railway.app/api/noti
 export async function sendPushToUser(targetUid, title, body) {
   try {
     const snap = await get(ref(db, `users/${targetUid}/fcmToken`));
-    if (!snap.exists()) return;
+    if (!snap.exists()) {
+      console.warn('[FCM] sendPushToUser — aucun token pour uid :', targetUid);
+      return;
+    }
+    const token = snap.val();
+    console.log('[FCM] sendPushToUser — token cible :', token);
 
-    await fetch(NOTIFY_URL, {
+    const res = await fetch(NOTIFY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: snap.val(), title, body }),
+      body: JSON.stringify({ token, title, body }),
     });
+    const data = await res.json().catch(() => null);
+    console.log('[FCM] réponse Railway :', res.status, data);
   } catch (err) {
     console.error('[FCM] send error:', err);
   }
