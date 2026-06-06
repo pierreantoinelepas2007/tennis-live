@@ -1,10 +1,37 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ref, onValue, set, push } from 'firebase/database';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { getScore, getSetsWon } from '../utils/tennisLogic';
 import LiveChat from '../components/LiveChat';
+
+function speak(text, enabled) {
+  if (!enabled || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'fr-FR';
+  utt.rate = 0.9;
+  window.speechSynthesis.speak(utt);
+}
+
+function buildGameText(prev, next) {
+  if (next.status === 'finished') {
+    const name = next.winner === 'a' ? next.playerA : next.playerB;
+    return `Match terminé ! Victoire de ${name}`;
+  }
+  const prevSetsLen = (prev.sets || []).length;
+  const newSetsLen = (next.sets || []).length;
+  if (newSetsLen > prevSetsLen) {
+    const s = next.sets[next.sets.length - 1];
+    const name = s.a > s.b ? next.playerA : next.playerB;
+    return `Set pour ${name} ! ${s.a} jeux à ${s.b}`;
+  }
+  const ga = next.games.a, gb = next.games.b;
+  if (ga === gb) return `${ga} partout`;
+  const winnerName = ga > gb ? next.playerA : next.playerB;
+  return `${Math.max(ga, gb)} à ${Math.min(ga, gb)} pour ${winnerName}`;
+}
 
 export default function WatchMatch() {
   const { matchId } = useParams();
@@ -15,6 +42,21 @@ export default function WatchMatch() {
   const [requestSent, setRequestSent] = useState(false);
   const [isApprovedScorer, setIsApprovedScorer] = useState(false);
   const [pendingResult, setPendingResult] = useState(null);
+  const [voiceEnabled, setVoiceEnabled] = useState(() =>
+    localStorage.getItem('watchVoiceEnabled') !== 'false'
+  );
+  const voiceEnabledRef = useRef(voiceEnabled);
+  const prevMatchRef = useRef(null);
+
+  useEffect(() => { voiceEnabledRef.current = voiceEnabled; }, [voiceEnabled]);
+
+  function toggleVoice() {
+    setVoiceEnabled(v => {
+      const next = !v;
+      localStorage.setItem('watchVoiceEnabled', String(next));
+      return next;
+    });
+  }
 
   useEffect(() => {
     const unsub = onValue(ref(db, 'matches/' + matchId), snap => {
@@ -23,6 +65,19 @@ export default function WatchMatch() {
     });
     return unsub;
   }, [matchId]);
+
+  // Déclenche la voix quand le score en jeux change dans Firestore
+  useEffect(() => {
+    if (!match) return;
+    const prev = prevMatchRef.current;
+    prevMatchRef.current = match;
+    if (!prev) return; // premier chargement, ne pas parler
+    const prevSetsLen = (prev.sets || []).length;
+    const gameWon =
+      (match.sets || []).length > prevSetsLen ||
+      match.games.a + match.games.b > prev.games.a + prev.games.b;
+    if (gameWon) speak(buildGameText(prev, match), voiceEnabledRef.current);
+  }, [match]);
 
   useEffect(() => {
     if (!user || !matchId) return;
@@ -135,6 +190,26 @@ export default function WatchMatch() {
           <span>Sets : {setsWon.a}–{setsWon.b}</span>
           <span>Jeux : {match.games?.a||0}–{match.games?.b||0}</span>
         </div>
+      </div>
+
+      {/* Bouton voix */}
+      <div style={{display:'flex',justifyContent:'center',marginBottom:'1rem'}}>
+        <button
+          onClick={toggleVoice}
+          style={{
+            display:'flex',alignItems:'center',gap:'6px',
+            padding:'6px 18px',
+            border: voiceEnabled ? '1px solid #1D9E75' : '1px solid #ddd',
+            borderRadius:'20px',
+            background: voiceEnabled ? '#f0fdf9' : '#fafafa',
+            color: voiceEnabled ? '#0F6E56' : '#888',
+            fontSize:'13px',fontWeight:'500',
+            cursor:'pointer',fontFamily:'inherit',
+            transition:'all 0.15s',
+          }}
+        >
+          {voiceEnabled ? '🔊 Voix activée' : '🔇 Voix désactivée'}
+        </button>
       </div>
 
       {/* Confirmation résultat pour le joueur */}
