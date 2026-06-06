@@ -50,11 +50,18 @@ export default function WatchMatch() {
   useEffect(() => { voiceEnabledRef.current = voiceEnabled; }, [voiceEnabled]);
 
   function toggleVoice() {
-    setVoiceEnabled(v => {
-      const next = !v;
-      localStorage.setItem('watchVoiceEnabled', String(next));
-      return next;
-    });
+    const next = !voiceEnabledRef.current;
+    localStorage.setItem('watchVoiceEnabled', String(next));
+    // iOS bloque speechSynthesis hors interaction utilisateur directe.
+    // On débloque ici, dans le gestionnaire de clic, de façon synchrone.
+    if (next && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const unlock = new SpeechSynthesisUtterance('Voix activée');
+      unlock.lang = 'fr-FR';
+      unlock.volume = 1;
+      window.speechSynthesis.speak(unlock);
+    }
+    setVoiceEnabled(next);
   }
 
   useEffect(() => {
