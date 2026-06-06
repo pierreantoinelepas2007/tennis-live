@@ -11,7 +11,8 @@ function speak(text, enabled) {
   window.speechSynthesis.cancel();
   const utt = new SpeechSynthesisUtterance(text);
   utt.lang = 'fr-FR';
-  utt.rate = 0.9;
+  utt.rate = 1.3;
+  utt.pitch = 1.1;
   window.speechSynthesis.speak(utt);
 }
 
@@ -281,18 +282,22 @@ export default function WatchMatch() {
 
 function ScorerMode({ matchId, match }) {
   const score = getScore(match);
+  const [localHistory, setLocalHistory] = useState([]);
 
-  async function addPoint(player) {
+  async function handlePoint(player) {
     const { addPoint: addPt } = await import('../utils/tennisLogic');
+    setLocalHistory(prev => [...prev, JSON.parse(JSON.stringify(match))]);
     const updated = addPt(match, player);
     const { history, ...toSave } = updated;
     await set(ref(db, 'matches/' + matchId), toSave);
   }
 
-  async function undoPoint() {
-    const { undoPoint: undoPt } = await import('../utils/tennisLogic');
-    const restored = undoPt(match);
-    const { history, ...toSave } = restored;
+  async function handleUndo() {
+    if (localHistory.length === 0) return;
+    const history = [...localHistory];
+    const previous = history.pop();
+    setLocalHistory(history);
+    const { history: _h, ...toSave } = previous;
     await set(ref(db, 'matches/' + matchId), toSave);
   }
 
@@ -303,21 +308,22 @@ function ScorerMode({ matchId, match }) {
       </div>
       <div style={{display:'flex',gap:'8px',marginBottom:'8px'}}>
         <button
-          onClick={() => addPoint('a')}
+          onClick={() => handlePoint('a')}
           style={{flex:1,padding:'14px',background:'#1D9E75',color:'#fff',border:'none',borderRadius:'10px',fontSize:'16px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit'}}
         >
           {score.playerA.split(' ')[0]} ▶
         </button>
         <button
-          onClick={() => addPoint('b')}
+          onClick={() => handlePoint('b')}
           style={{flex:1,padding:'14px',background:'#2563EB',color:'#fff',border:'none',borderRadius:'10px',fontSize:'16px',fontWeight:'700',cursor:'pointer',fontFamily:'inherit'}}
         >
           {score.playerB.split(' ')[0]} ▶
         </button>
       </div>
       <button
-        onClick={undoPoint}
-        style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.15)',color:'#fff',border:'none',borderRadius:'8px',fontSize:'14px',cursor:'pointer',fontFamily:'inherit'}}
+        onClick={handleUndo}
+        disabled={localHistory.length === 0}
+        style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.15)',color:'#fff',border:'none',borderRadius:'8px',fontSize:'14px',cursor:'pointer',fontFamily:'inherit',opacity:localHistory.length > 0 ? 1 : 0.4}}
       >
         ↩ Annuler dernier point
       </button>
