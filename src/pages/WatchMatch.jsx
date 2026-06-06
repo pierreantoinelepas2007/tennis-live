@@ -41,7 +41,6 @@ export default function WatchMatch() {
   const [loading, setLoading] = useState(true);
   const [requestSent, setRequestSent] = useState(false);
   const [isApprovedScorer, setIsApprovedScorer] = useState(false);
-  const [pendingResult, setPendingResult] = useState(null);
   const [voiceEnabled, setVoiceEnabled] = useState(() =>
     localStorage.getItem('watchVoiceEnabled') !== 'false'
   );
@@ -81,42 +80,42 @@ export default function WatchMatch() {
 
   useEffect(() => {
     if (!user || !matchId) return;
-    // Vérifier si on est approuvé comme marqueur
-    onValue(ref(db, 'matches/' + matchId + '/scorer'), snap => {
+    const unsubScorer = onValue(ref(db, 'matches/' + matchId + '/scorer'), snap => {
       if (snap.exists()) {
         const scorer = snap.val();
-        if (scorer.uid === user.uid && scorer.approved) {
-          setIsApprovedScorer(true);
-        }
+        setIsApprovedScorer(scorer.uid === user.uid && scorer.approved === true);
+      } else {
+        setIsApprovedScorer(false);
       }
     });
-    // Vérifier si demande déjà envoyée
-    onValue(ref(db, 'matches/' + matchId + '/scorerRequest'), snap => {
-      if (snap.exists() && snap.val().uid === user.uid) {
-        setRequestSent(true);
-      }
+    const unsubRequest = onValue(ref(db, 'matches/' + matchId + '/scorerRequest'), snap => {
+      setRequestSent(snap.exists() && snap.val().uid === user.uid);
     });
+    return () => { unsubScorer(); unsubRequest(); };
   }, [user, matchId]);
 
   async function requestScoring() {
     if (!user) { navigate('/login'); return; }
-    await set(ref(db, 'matches/' + matchId + '/scorerRequest'), {
-      uid: user.uid,
-      name: profile?.name || user.displayName,
-      requestedAt: Date.now(),
-      approved: false,
-    });
-    // Notifier le joueur
-    await push(ref(db, 'users/' + match.ownerUid + '/notifications'), {
-      type: 'scorer_request',
-      matchId,
-      from: profile?.name || user.displayName,
-      fromUid: user.uid,
-      message: (profile?.name || user.displayName) + ' veut noter ton match',
-      createdAt: Date.now(),
-      read: false,
-    });
-    setRequestSent(true);
+    try {
+      await set(ref(db, 'matches/' + matchId + '/scorerRequest'), {
+        uid: user.uid,
+        name: profile?.name || user.displayName,
+        requestedAt: Date.now(),
+        approved: false,
+      });
+      await push(ref(db, 'users/' + match.ownerUid + '/notifications'), {
+        type: 'scorer_request',
+        matchId,
+        from: profile?.name || user.displayName,
+        fromUid: user.uid,
+        message: (profile?.name || user.displayName) + ' veut noter ton match',
+        createdAt: Date.now(),
+        read: false,
+      });
+    } catch (e) {
+      console.error('requestScoring error:', e);
+      alert('Erreur lors de l\'envoi de la demande.');
+    }
   }
 
   async function confirmResult() {
@@ -247,6 +246,13 @@ export default function WatchMatch() {
               📝 Demander à noter ce match
             </button>
           )}
+        </div>
+      )}
+
+      {/* Mode notation approuvé — confirmation visible */}
+      {!isOwner && isApprovedScorer && isLive && (
+        <div style={{background:'#E8F5F0',border:'1px solid #1D9E75',borderRadius:'8px',padding:'10px 14px',marginBottom:'8px',fontSize:'13px',color:'#0F6E56',fontWeight:'600',textAlign:'center'}}>
+          ✓ Tu es marqueur officiel de ce match
         </div>
       )}
 
