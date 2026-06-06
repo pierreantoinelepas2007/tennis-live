@@ -5,7 +5,7 @@ import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import styles from './Players.module.css';
 
-const CF_BASE = 'https://railway-init-production-f1ae.up.railway.app';
+const BACKEND_URL = 'https://railway-init-production-f1ae.up.railway.app';
 
 export default function Players() {
   const { user } = useAuth();
@@ -35,7 +35,7 @@ export default function Players() {
     setLoading(true);
     setResults([]);
     try {
-      const res = await fetch(`${CF_BASE}/api/search-players?q=${encodeURIComponent(search)}&limit=15`);
+      const res = await fetch(`${BACKEND_URL}/api/search-players?q=${encodeURIComponent(search)}&limit=15`);
       const data = await res.json();
       if (data.success) setResults(data.players);
     } catch (e) {
