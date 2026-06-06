@@ -7,6 +7,33 @@ import { addPoint, getScore, getSetsWon, formatScore } from '../utils/tennisLogi
 import LiveChat from '../components/LiveChat';
 import styles from './ScoreMatch.module.css';
 
+function speak(text, enabled) {
+  if (!enabled || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'fr-FR';
+  utt.rate = 0.9;
+  window.speechSynthesis.speak(utt);
+}
+
+function buildGameText(prev, next) {
+  if (next.status === 'finished') {
+    const name = next.winner === 'a' ? next.playerA : next.playerB;
+    return `Match terminé ! Victoire de ${name}`;
+  }
+  const prevSetsLen = (prev.sets || []).length;
+  const newSetsLen = (next.sets || []).length;
+  if (newSetsLen > prevSetsLen) {
+    const s = next.sets[next.sets.length - 1];
+    const name = s.a > s.b ? next.playerA : next.playerB;
+    return `Set pour ${name} ! ${s.a} jeux à ${s.b}`;
+  }
+  const ga = next.games.a, gb = next.games.b;
+  if (ga === gb) return `${ga} partout`;
+  const winnerName = ga > gb ? next.playerA : next.playerB;
+  return `${Math.max(ga, gb)} à ${Math.min(ga, gb)} pour ${winnerName}`;
+}
+
 export default function ScoreMatch() {
   const { matchId } = useParams();
   const { user } = useAuth();
@@ -16,6 +43,17 @@ export default function ScoreMatch() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [shareToast, setShareToast] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(() =>
+    localStorage.getItem('voiceEnabled') !== 'false'
+  );
+
+  function toggleVoice() {
+    setVoiceEnabled(v => {
+      const next = !v;
+      localStorage.setItem('voiceEnabled', String(next));
+      return next;
+    });
+  }
 
   const shareUrl = window.location.origin + '/watch/' + matchId;
 
@@ -47,6 +85,11 @@ export default function ScoreMatch() {
     const updated = addPoint(match, player);
     setMatch(updated);
     await saveMatch(updated);
+    const prevSetsLen = (match.sets || []).length;
+    const gameWon =
+      (updated.sets || []).length > prevSetsLen ||
+      updated.games.a + updated.games.b > match.games.a + match.games.b;
+    if (gameWon) speak(buildGameText(match, updated), voiceEnabled);
     if (updated.status === 'finished') {
       const winnerName = updated.winner === 'a' ? updated.playerA : updated.playerB;
       setTimeout(() => {
@@ -146,6 +189,15 @@ export default function ScoreMatch() {
         >
           ↩ Annuler dernier point
         </button>
+
+        <div className={styles.voiceRow}>
+          <button
+            className={styles.voiceBtn + (voiceEnabled ? ' ' + styles.voiceBtnOn : '')}
+            onClick={toggleVoice}
+          >
+            {voiceEnabled ? '🔊 Voix activée' : '🔇 Voix désactivée'}
+          </button>
+        </div>
 
         <div className={styles.stats}>
           <span>Points : {match.totalPoints || 0}</span>

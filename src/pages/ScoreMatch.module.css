@@ -169,6 +169,33 @@
 .undoBtn:hover:not(:disabled) { background: #fdf3f2; color: #c0392b; border-color: #f5c6c2; }
 .undoBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+.voiceRow {
+  display: flex;
+  justify-content: center;
+  padding: 6px 1.25rem 0.75rem;
+}
+.voiceBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 18px;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  background: #fafafa;
+  color: #888;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.voiceBtn:hover { background: #f0f0f0; }
+.voiceBtnOn {
+  border-color: #1D9E75;
+  color: #0F6E56;
+  background: #f0fdf9;
+}
+
 .stats {
   display: flex;
   justify-content: center;
