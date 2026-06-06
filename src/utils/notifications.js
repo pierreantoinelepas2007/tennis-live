@@ -45,7 +45,7 @@ export async function initNotifications(uid) {
   }
 }
 
-const NOTIFY_URL = 'https://us-central1-tennis-live-2b8fc.cloudfunctions.net/notify';
+const NOTIFY_URL = 'https://railway-init-production-f1ae.up.railway.app/notify';
 
 export async function sendPushToUser(targetUid, title, body) {
   try {

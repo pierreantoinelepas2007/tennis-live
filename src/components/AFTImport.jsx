@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import styles from './AFTImport.module.css';
 
-const BACKEND = 'http://localhost:4000';
+const CF_BASE = 'https://railway-init-production-f1ae.up.railway.app';
 
 export default function AFTImport({ onImport }) {
   const [search, setSearch] = useState('');
@@ -16,7 +16,7 @@ export default function AFTImport({ onImport }) {
     setError('');
     setResults([]);
     try {
-      const res = await fetch(`${BACKEND}/api/search-players?q=${encodeURIComponent(search)}&limit=10`);
+      const res = await fetch(`${CF_BASE}/searchPlayers?q=${encodeURIComponent(search)}&limit=10`);
       const data = await res.json();
       if (data.success && data.players.length > 0) {
         setResults(data.players);

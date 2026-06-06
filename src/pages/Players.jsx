@@ -5,7 +5,7 @@ import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import styles from './Players.module.css';
 
-const CF_BASE = 'https://us-central1-tennis-live-2b8fc.cloudfunctions.net';
+const CF_BASE = 'https://railway-init-production-f1ae.up.railway.app';
 
 export default function Players() {
   const { user } = useAuth();

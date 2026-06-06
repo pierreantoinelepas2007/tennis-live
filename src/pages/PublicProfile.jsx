@@ -4,7 +4,7 @@ import { ref, onValue } from 'firebase/database';
 import { db } from '../firebase';
 import styles from './PlayerProfile.module.css';
 
-const BACKEND = 'https://tennis-live-backend-1.onrender.com';
+const BACKEND = 'https://railway-init-production-f1ae.up.railway.app';
 
 export default function PublicProfile() {
   const { uid } = useParams();

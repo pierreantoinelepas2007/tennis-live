@@ -5,7 +5,7 @@ import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import styles from './Club.module.css';
 
-const BACKEND = 'https://tennis-live-backend-1.onrender.com';
+const CF_BASE = 'https://railway-init-production-f1ae.up.railway.app';
 
 export default function Club() {
   const { user, profile, updateProfile } = useAuth();
@@ -41,7 +41,7 @@ export default function Club() {
     if (!searchClub.trim()) return;
     setLoading(true);
     try {
-      const res = await fetch(BACKEND + '/api/search-players?q=' + encodeURIComponent(searchClub) + '&limit=5');
+      const res = await fetch(CF_BASE + '/searchPlayers?q=' + encodeURIComponent(searchClub) + '&limit=5');
       const data = await res.json();
       if (data.success) {
         const clubs = [...new Set(data.players.map(p => p.club).filter(Boolean))];

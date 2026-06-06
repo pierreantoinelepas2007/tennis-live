@@ -7,7 +7,7 @@ import { createMatch } from '../utils/tennisLogic';
 import styles from './CreateMatch.module.css';
 
 const SURFACES = ['Terre battue', 'Dur', 'Gazon', 'Moquette', 'Synthetique'];
-const BACKEND = 'https://tennis-live-backend-1.onrender.com';
+const BACKEND = 'https://railway-init-production-f1ae.up.railway.app';
 
 export default function CreateMatch() {
   const { user, profile } = useAuth();

@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getEarnedBadges } from '../utils/badges';
 import styles from './Profile.module.css';
 
-const BACKEND = 'https://tennis-live-backend-1.onrender.com';
+const CF_BASE = 'https://railway-init-production-f1ae.up.railway.app';
 
 export default function Profile() {
   const { user, profile, updateProfile, logout } = useAuth();
@@ -63,7 +63,7 @@ export default function Profile() {
     setLoading(true);
     setResults([]);
     try {
-      const res = await fetch(BACKEND + '/api/search-players?q=' + encodeURIComponent(search) + '&limit=10');
+      const res = await fetch(CF_BASE + '/searchPlayers?q=' + encodeURIComponent(search) + '&limit=10');
       const data = await res.json();
       if (data.success) setResults(data.players);
     } catch (e) {
@@ -76,16 +76,13 @@ export default function Profile() {
   async function linkAFT(player) {
     setSaving(true);
     try {
-      const res = await fetch(BACKEND + '/api/player/' + player.aft_id);
-      const data = await res.json();
-      const fullProfile = data.player || player;
       await updateProfile({
         aftNumber: String(player.aft_id),
         aftRanking: player.ranking,
         aftPoints: parseFloat(player.points),
         aftVictories: player.victories,
         aftDefeats: player.defeats,
-        club: fullProfile.club || null,
+        club: player.club || null,
         aftName: player.name,
         aftLinked: true,
         aftLinkedAt: Date.now(),

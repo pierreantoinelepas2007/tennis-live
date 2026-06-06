@@ -18,7 +18,7 @@ import MatchMode from './pages/MatchMode';
 import Toss from './pages/Toss';
 import Club from './pages/Club';
 // Garde le backend éveillé
-const BACKEND = 'https://tennis-live-backend-1.onrender.com';
+const BACKEND = 'https://railway-init-production-f1ae.up.railway.app';
 setInterval(() => {
   fetch(BACKEND + '/ping').catch(() => {});
 }, 600000); // toutes les 10 minutes
