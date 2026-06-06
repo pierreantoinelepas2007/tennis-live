@@ -41,7 +41,7 @@ export default function Club() {
     if (!searchClub.trim()) return;
     setLoading(true);
     try {
-      const res = await fetch(CF_BASE + '/searchPlayers?q=' + encodeURIComponent(searchClub) + '&limit=5');
+      const res = await fetch(CF_BASE + '/api/search-players?q=' + encodeURIComponent(searchClub) + '&limit=5');
       const data = await res.json();
       if (data.success) {
         const clubs = [...new Set(data.players.map(p => p.club).filter(Boolean))];

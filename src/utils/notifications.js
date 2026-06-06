@@ -45,7 +45,7 @@ export async function initNotifications(uid) {
   }
 }
 
-const NOTIFY_URL = 'https://railway-init-production-f1ae.up.railway.app/notify';
+const NOTIFY_URL = 'https://railway-init-production-f1ae.up.railway.app/api/notify';
 
 export async function sendPushToUser(targetUid, title, body) {
   try {

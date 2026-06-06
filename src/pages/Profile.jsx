@@ -63,7 +63,7 @@ export default function Profile() {
     setLoading(true);
     setResults([]);
     try {
-      const res = await fetch(CF_BASE + '/searchPlayers?q=' + encodeURIComponent(search) + '&limit=10');
+      const res = await fetch(CF_BASE + '/api/search-players?q=' + encodeURIComponent(search) + '&limit=10');
       const data = await res.json();
       if (data.success) setResults(data.players);
     } catch (e) {
