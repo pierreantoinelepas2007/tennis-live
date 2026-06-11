@@ -4,6 +4,7 @@ import { ref, onValue, set, push } from 'firebase/database';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { getScore, getSetsWon } from '../utils/tennisLogic';
+import { sendPushToUser } from '../utils/notifications';
 import LiveChat from '../components/LiveChat';
 
 function speak(text, enabled) {
@@ -120,6 +121,12 @@ export default function WatchMatch() {
         createdAt: Date.now(),
         read: false,
       });
+      const nom = profile?.name || user.displayName;
+      await sendPushToUser(
+        match.ownerUid,
+        'Demande de marqueur',
+        nom + ' veut noter ton match',
+      );
     } catch (e) {
       console.error('requestScoring error:', e);
       alert('Erreur lors de l\'envoi de la demande.');
